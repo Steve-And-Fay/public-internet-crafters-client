@@ -15,6 +15,18 @@ describe("browser tracker injection", () => {
     expect(second.html.match(/\/__ic\/analytics\/v1\/client\.js/g)).toHaveLength(1);
   });
 
+  it("adds escaped release metadata for error grouping", () => {
+    const result = injectBrowserTracker(
+      "<!doctype html><html><head><title>Example</title></head><body></body></html>",
+      'deploy-123" onload="alert(1)',
+    );
+
+    expect(result.html).toContain(
+      '<meta name="ic-release" content="deploy-123&quot; onload=&quot;alert(1)">',
+    );
+    expect(result.html).not.toContain('content="deploy-123"');
+  });
+
   it("leaves fragments without a head element unchanged", () => {
     expect(injectBrowserTracker("<main>Fragment</main>")).toEqual({
       html: "<main>Fragment</main>",

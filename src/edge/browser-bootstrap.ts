@@ -1,7 +1,18 @@
 export const BROWSER_TRACKER_PATH = "/__ic/analytics/v1/client.js";
 const SCRIPT_TAG = `<script src="${BROWSER_TRACKER_PATH}" defer></script>`;
 
-export function injectBrowserTracker(html: string): { html: string; injected: boolean } {
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+export function injectBrowserTracker(
+  html: string,
+  release?: string,
+): { html: string; injected: boolean } {
   if (html.includes(BROWSER_TRACKER_PATH)) {
     return { html, injected: false };
   }
@@ -11,8 +22,12 @@ export function injectBrowserTracker(html: string): { html: string; injected: bo
     return { html, injected: false };
   }
 
+  const releaseTag = release
+    ? `<meta name="ic-release" content="${escapeHtmlAttribute(release)}">`
+    : "";
+
   return {
-    html: html.replace(headClose, `${SCRIPT_TAG}</head>`),
+    html: html.replace(headClose, `${releaseTag}${SCRIPT_TAG}</head>`),
     injected: true,
   };
 }

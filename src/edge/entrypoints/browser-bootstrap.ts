@@ -3,6 +3,7 @@ import {
   type EdgeFunctionConfig,
   type NetlifyEdgeContext,
   runtimeDestination,
+  runtimeRelease,
 } from "../runtime.js";
 
 const BODY_HEADERS = ["content-encoding", "content-length", "content-md5", "etag"];
@@ -21,7 +22,7 @@ export default async function browserBootstrap(
     return response;
   }
 
-  const transformed = injectBrowserTracker(await response.text());
+  const transformed = injectBrowserTracker(await response.text(), runtimeRelease());
   if (!transformed.injected) {
     return response;
   }

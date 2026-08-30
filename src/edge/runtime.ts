@@ -46,6 +46,12 @@ export function runtimeDestination(
   });
 }
 
+export function runtimeRelease(env: NetlifyEnvironment | undefined = runtimeEnvironment()): string {
+  return (
+    env?.get("IC_ANALYTICS_RELEASE") || env?.get("COMMIT_REF") || env?.get("DEPLOY_ID") || "unknown"
+  );
+}
+
 export function analyticsResponse(status: number, message?: string): Response {
   return new Response(message ? JSON.stringify({ error: message }) : null, {
     headers: {
