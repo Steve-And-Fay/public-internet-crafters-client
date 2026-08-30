@@ -61,7 +61,7 @@ export async function installAdapter({
     await Promise.all(
       NETLIFY_EDGE_FUNCTIONS.map((sourceFile) =>
         cp(
-          fileURLToPath(new URL(`.generated/edge-functions/${sourceFile}`, repositoryRoot)),
+          fileURLToPath(new URL(`dist/netlify/${sourceFile}`, repositoryRoot)),
           resolve(targetRoot, `internet-crafters-analytics-${sourceFile}`),
           { force: true },
         ),

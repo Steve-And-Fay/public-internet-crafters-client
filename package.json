@@ -1,6 +1,6 @@
 {
   "name": "internet-crafters-client",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "license": "UNLICENSED",
   "repository": {
@@ -14,6 +14,11 @@
   "bin": {
     "ic-client": "dist/cli.mjs"
   },
+  "files": [
+    "dist",
+    "platforms",
+    "README.md"
+  ],
   "exports": {
     ".": {
       "types": "./src/public.ts",
@@ -24,7 +29,7 @@
     "node": ">=20.12.2"
   },
   "scripts": {
-    "build": "npm run build:portable && npm run generate",
+    "build": "npm run generate && npm run build:portable",
     "build:portable": "node scripts/build-portable.mjs",
     "check": "biome check .",
     "check:fix": "biome check --write .",
@@ -32,7 +37,7 @@
     "generate": "node scripts/build-edge-functions.mjs",
     "generated:check": "npm run generate && node scripts/check-generated.mjs",
     "hooks": "husky",
-    "prepare": "npm run build:portable && npm run generate",
+    "prepare": "npm run build",
     "spell": "cspell --no-progress --no-summary .",
     "spell:fix": "cspell --no-progress --no-summary --words-only .",
     "test": "vitest run",

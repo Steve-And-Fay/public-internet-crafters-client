@@ -63,3 +63,10 @@ await cp(
   new URL("wordpress/internet-crafters-analytics/", distDirectory),
   { recursive: true },
 );
+await cp(
+  new URL("../.generated/edge-functions/", import.meta.url),
+  new URL("netlify/", distDirectory),
+  {
+    recursive: true,
+  },
+);

@@ -38,9 +38,10 @@ describe("portable customer deployments", () => {
 
     expect(packageJson.private).toBe(true);
     expect(packageJson.bin).toEqual({ "ic-client": "dist/cli.mjs" });
+    expect(packageJson.files).toEqual(expect.arrayContaining(["dist", "platforms"]));
     expect(packageJson.scripts).toMatchObject({
       "build:portable": "node scripts/build-portable.mjs",
-      prepare: "npm run build:portable && npm run generate",
+      prepare: "npm run build",
     });
   });
 });

@@ -14,7 +14,7 @@ GitHub tag or commit -> Git dependency prepare build -> AWS, WordPress, and cust
 Pin a tag or full commit rather than the default branch:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.0"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.1"
 ```
 
 npm installs the dependencies needed by a Git package with a `prepare` script, runs that portable

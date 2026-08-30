@@ -130,7 +130,7 @@ pin a public GitHub tag or commit instead.
 AWS, WordPress, and custom Node projects can pin a public GitHub tag or commit:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.0"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.1"
 npx ic-client install wordpress --target ./wp-content/plugins
 npx ic-client install aws --target ./infrastructure
 ```
