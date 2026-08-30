@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Internet Crafters crawler analytics from CloudFront real-time logs.
+
+Parameters:
+  DistributionId:
+    Type: String
+    Description: Existing CloudFront distribution ID represented by these events.
+  IngestUrl:
+    Type: String
+    Description: HTTPS URL for the Internet Crafters portal analytics ingest endpoint.
+  IngestToken:
+    Type: String
+    NoEcho: true
+    Description: Site-scoped analytics installation token issued by the portal.
+  SamplingRate:
+    Type: Number
+    Default: 100
+    MinValue: 1
+    MaxValue: 100
+    Description: Percentage of matching CloudFront requests included in the real-time log stream.
+
+Resources:
+  AnalyticsLogStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      RetentionPeriodHours: 24
+      ShardCount: 1
+      StreamEncryption:
+        EncryptionType: KMS
+        KeyId: alias/aws/kinesis
+
+  CloudFrontLogDeliveryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DeliverInternetCraftersAnalyticsLogs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:DescribeStreamSummary
+                  - kinesis:DescribeStream
+                  - kinesis:PutRecord
+                  - kinesis:PutRecords
+                Resource: !GetAtt AnalyticsLogStream.Arn
+
+  AnalyticsRealtimeLogConfig:
+    Type: AWS::CloudFront::RealtimeLogConfig
+    Properties:
+      Name: !Sub internet-crafters-analytics-${AWS::StackName}
+      SamplingRate: !Ref SamplingRate
+      Fields:
+        - timestamp
+        - c-ip
+        - sc-status
+        - cs-method
+        - cs-host
+        - cs-uri-stem
+        - cs-user-agent
+        - x-edge-request-id
+        - sc-content-type
+      EndPoints:
+        - StreamType: Kinesis
+          KinesisStreamConfig:
+            RoleARN: !GetAtt CloudFrontLogDeliveryRole.Arn
+            StreamARN: !GetAtt AnalyticsLogStream.Arn
+
+  AnalyticsCollectorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures:
+        - arm64
+      CodeUri: function/
+      Environment:
+        Variables:
+          IC_ANALYTICS_INGEST_URL: !Ref IngestUrl
+          IC_ANALYTICS_INGEST_TOKEN: !Ref IngestToken
+          IC_CLOUDFRONT_DISTRIBUTION_ID: !Ref DistributionId
+          IC_CLOUDFRONT_LOG_FIELDS: timestamp,c-ip,sc-status,cs-method,cs-host,cs-uri-stem,cs-user-agent,x-edge-request-id,sc-content-type
+      Events:
+        AnalyticsRecords:
+          Type: Kinesis
+          Properties:
+            BatchSize: 100
+            BisectBatchOnFunctionError: true
+            Enabled: true
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+            MaximumRetryAttempts: 3
+            StartingPosition: LATEST
+            Stream: !GetAtt AnalyticsLogStream.Arn
+      Handler: index.handler
+      MemorySize: 256
+      Runtime: nodejs20.x
+      Timeout: 30
+
+Outputs:
+  RealtimeLogConfigArn:
+    Description: Attach this ARN as RealtimeLogConfigArn on each CloudFront cache behavior to observe.
+    Value: !Ref AnalyticsRealtimeLogConfig
+  AnalyticsLogStreamName:
+    Value: !Ref AnalyticsLogStream
+  AnalyticsCollectorFunctionName:
+    Value: !Ref AnalyticsCollectorFunction

@@ -1,0 +1,5 @@
+config:
+  slug: internet-crafters-client
+  name: Internet Crafters Client Analytics
+  description: Reusable crawler and browser analytics for customer sites.
+  use_cjs_shims: false

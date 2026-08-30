@@ -1,0 +1,12 @@
+node_modules/
+.generated/
+.netlify/
+.ntli/
+coverage/
+dist/
+platforms/aws/function/
+platforms/wordpress/internet-crafters-analytics/assets/tracker.js
+docs-temp/
+.DS_Store
+*.log
+.husky/_/

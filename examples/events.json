@@ -1,0 +1,82 @@
+[
+  {
+    "schema_version": 1,
+    "event_id": "01CRAWLERREQUEST",
+    "event_type": "crawler_page_view",
+    "occurred_at": "2026-08-30T18:22:10.123Z",
+    "source": "netlify-edge",
+    "site": {
+      "hostname": "example.com",
+      "platform": "netlify",
+      "platform_site_id": "netlify-site-1"
+    },
+    "page": {
+      "path": "/services"
+    },
+    "request": {
+      "agent_category": "crawler;search-engine",
+      "client_ip": "192.0.2.1",
+      "method": "GET",
+      "status_code": 200,
+      "user_agent": "ExampleBot/1.0"
+    }
+  },
+  {
+    "schema_version": 1,
+    "event_id": "browser-event-1",
+    "event_type": "click",
+    "occurred_at": "2026-08-30T18:31:00.000Z",
+    "received_at": "2026-08-30T18:31:01.000Z",
+    "source": "browser",
+    "site": {
+      "hostname": "example.com",
+      "platform": "netlify",
+      "platform_site_id": "netlify-site-1"
+    },
+    "page": {
+      "path": "/pricing"
+    },
+    "properties": {
+      "session_id": "session-1",
+      "target_destination": "/contact",
+      "target_kind": "link",
+      "target_name": "pricing-contact"
+    },
+    "attribution": {
+      "source": "google",
+      "medium": "cpc",
+      "campaign": "summer-service",
+      "paid_click_provider": "google",
+      "paid_click_present": true
+    }
+  },
+  {
+    "schema_version": 1,
+    "event_id": "lambda-request-1",
+    "event_type": "error",
+    "occurred_at": "2026-08-30T18:35:00.000Z",
+    "source": "aws-lambda",
+    "site": {
+      "hostname": "example.com",
+      "platform": "aws",
+      "platform_site_id": "booking-function"
+    },
+    "page": {
+      "path": "/api/booking"
+    },
+    "error": {
+      "type": "BookingFailure",
+      "mechanism": "lambda.handler",
+      "release": "site-2026.08.30",
+      "runtime": "lambda",
+      "frames": [
+        {
+          "module": "/var/task/booking.js",
+          "function": "submitBooking",
+          "line": 42,
+          "column": 9
+        }
+      ]
+    }
+  }
+]

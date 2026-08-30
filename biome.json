@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!!.generated",
+      "!!.netlify",
+      "!!.ntli",
+      "!!dist",
+      "!!.husky/_",
+      "!!coverage",
+      "!!node_modules",
+      "!!platforms/aws/function",
+      "!!platforms/wordpress/internet-crafters-analytics/assets/tracker.js"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended"
+    }
+  }
+}

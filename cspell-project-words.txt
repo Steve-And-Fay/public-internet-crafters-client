@@ -1,0 +1,40 @@
+# Internet Crafters and Netlify
+Crafters
+Netlify
+Applebot
+Googlebot
+netlify
+ntli
+
+# Analytics vocabulary
+pageview
+pageviews
+webhook
+dclid
+fbclid
+gbraid
+gclid
+msclkid
+ttclid
+wbraid
+yclid
+
+# Tooling
+Biome
+ABSPATH
+bingbot
+EDFDVBD
+esbuild
+HMAC
+Kinesis
+Lambda
+npx
+nanoid
+nvmrc
+nosniff
+SAM
+CRAWLERREQUEST
+TESTREQUEST
+tsconfig
+unslash
+Vitest

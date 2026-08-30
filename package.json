@@ -1,0 +1,65 @@
+{
+  "name": "internet-crafters-client",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Steve-And-Fay/public-internet-crafters-client.git"
+  },
+  "description": "Provider-neutral customer-site analytics and error monitoring for Netlify, AWS, and WordPress.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/public.ts",
+  "bin": {
+    "ic-client": "dist/cli.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/public.ts",
+      "import": "./dist/public.mjs"
+    }
+  },
+  "engines": {
+    "node": ">=20.12.2"
+  },
+  "scripts": {
+    "build": "npm run build:portable && npm run generate && netlify-extension build -a",
+    "build:portable": "node scripts/build-portable.mjs",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "dev": "npm run generate && netlify-extension dev --open",
+    "generate": "node scripts/build-edge-functions.mjs",
+    "generated:check": "npm run generate && node scripts/check-generated.mjs",
+    "hooks": "husky",
+    "prepare": "npm run build:portable",
+    "spell": "cspell --no-progress --no-summary .",
+    "spell:fix": "cspell --no-progress --no-summary --words-only .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run spell && npm run check && npm run typecheck && npm test && npm run build && npm run generated:check"
+  },
+  "dependencies": {
+    "@netlify/sdk": "^5.0.4"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.11",
+    "@types/node": "^26.4.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "cspell": "^10.1.1",
+    "esbuild": "^0.28.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.4.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  },
+  "lint-staged": {
+    "*.{js,mjs,ts,json,jsonc,yaml,yml}": [
+      "biome check --write --no-errors-on-unmatched",
+      "cspell --no-progress --no-summary"
+    ],
+    "*.md": "cspell --no-progress --no-summary"
+  }
+}
