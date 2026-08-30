@@ -1,11 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { runtimeRelease } from "../src/edge/runtime.js";
+import { runtimeCollectionEnabled, runtimeRelease } from "../src/edge/runtime.js";
 
 function environment(values: Record<string, string | undefined>) {
   return { get: (name: string) => values[name] };
 }
 
 describe("Netlify runtime metadata", () => {
+  it("requires the global switch and defaults each enabled channel on", () => {
+    expect(runtimeCollectionEnabled("browser", environment({}))).toBe(false);
+    expect(runtimeCollectionEnabled("browser", environment({ IC_ANALYTICS_ENABLED: "true" }))).toBe(
+      true,
+    );
+    expect(
+      runtimeCollectionEnabled(
+        "browser",
+        environment({ IC_ANALYTICS_BROWSER: "false", IC_ANALYTICS_ENABLED: "true" }),
+      ),
+    ).toBe(false);
+    expect(
+      runtimeCollectionEnabled(
+        "crawler",
+        environment({ IC_ANALYTICS_CRAWLERS: "false", IC_ANALYTICS_ENABLED: "true" }),
+      ),
+    ).toBe(false);
+  });
+
   it("uses an explicit release before Netlify deploy metadata", () => {
     expect(
       runtimeRelease(

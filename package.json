@@ -1,6 +1,6 @@
 {
   "name": "internet-crafters-client",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": true,
   "license": "UNLICENSED",
   "repository": {
@@ -9,7 +9,7 @@
   },
   "description": "Provider-neutral customer-site analytics and error monitoring for Netlify, AWS, and WordPress.",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/public.mjs",
   "types": "src/public.ts",
   "bin": {
     "ic-client": "dist/cli.mjs"
@@ -24,15 +24,15 @@
     "node": ">=20.12.2"
   },
   "scripts": {
-    "build": "npm run build:portable && npm run generate && netlify-extension build -a",
+    "build": "npm run build:portable && npm run generate",
     "build:portable": "node scripts/build-portable.mjs",
     "check": "biome check .",
     "check:fix": "biome check --write .",
-    "dev": "npm run generate && netlify-extension dev --open",
+    "dev": "vitest",
     "generate": "node scripts/build-edge-functions.mjs",
     "generated:check": "npm run generate && node scripts/check-generated.mjs",
     "hooks": "husky",
-    "prepare": "npm run build:portable",
+    "prepare": "npm run build:portable && npm run generate",
     "spell": "cspell --no-progress --no-summary .",
     "spell:fix": "cspell --no-progress --no-summary --words-only .",
     "test": "vitest run",
@@ -41,12 +41,8 @@
     "typecheck": "tsc --noEmit",
     "verify": "npm run spell && npm run check && npm run typecheck && npm test && npm run build && npm run generated:check"
   },
-  "dependencies": {
-    "@netlify/sdk": "^5.0.4"
-  },
   "devDependencies": {
     "@biomejs/biome": "^2.5.11",
-    "@netlify/netlify-plugin-netlify-extension": "^1.2.2",
     "@types/node": "^26.4.0",
     "@vitest/coverage-v8": "^4.1.11",
     "cspell": "^10.1.1",

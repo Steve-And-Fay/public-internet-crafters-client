@@ -1,12 +1,6 @@
 [build]
 command = "npm run build"
-publish = ".ntli/site/static"
+publish = ".generated/edge-functions"
 
 [dev]
-command = "netlify-extension dev"
-
-[functions]
-directory = "src/endpoints"
-
-[[plugins]]
-package = "@netlify/netlify-plugin-netlify-extension"
+command = "npm run dev"

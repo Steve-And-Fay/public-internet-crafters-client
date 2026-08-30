@@ -2,6 +2,7 @@ import { createCrawlerPageView } from "../events/crawler.js";
 import {
   type EdgeFunctionConfig,
   type NetlifyEdgeContext,
+  runtimeCollectionEnabled,
   runtimeDestination,
 } from "../runtime.js";
 
@@ -9,6 +10,10 @@ export default async function crawlerObserver(
   request: Request,
   context: NetlifyEdgeContext,
 ): Promise<Response> {
+  if (!runtimeCollectionEnabled("crawler")) {
+    return context.next();
+  }
+
   const destination = runtimeDestination();
   const occurredAt = new Date();
   const response = await context.next();

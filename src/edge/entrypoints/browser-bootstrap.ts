@@ -2,6 +2,7 @@ import { injectBrowserTracker } from "../browser-bootstrap.js";
 import {
   type EdgeFunctionConfig,
   type NetlifyEdgeContext,
+  runtimeCollectionEnabled,
   runtimeDestination,
   runtimeRelease,
 } from "../runtime.js";
@@ -13,7 +14,12 @@ export default async function browserBootstrap(
   context: NetlifyEdgeContext,
 ): Promise<Response> {
   const response = await context.next();
-  if (!runtimeDestination() || !response.ok || !response.body) {
+  if (
+    !runtimeCollectionEnabled("browser") ||
+    !runtimeDestination() ||
+    !response.ok ||
+    !response.body
+  ) {
     return response;
   }
 

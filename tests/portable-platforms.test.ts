@@ -40,7 +40,7 @@ describe("portable customer deployments", () => {
     expect(packageJson.bin).toEqual({ "ic-client": "dist/cli.mjs" });
     expect(packageJson.scripts).toMatchObject({
       "build:portable": "node scripts/build-portable.mjs",
-      prepare: "npm run build:portable",
+      prepare: "npm run build:portable && npm run generate",
     });
   });
 });

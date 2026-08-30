@@ -1,7 +1,20 @@
 # Netlify installation
 
-Install the published Internet Crafters Extension on the customer team, then configure these
-site-scoped build and runtime variables:
+Add this command before the site's production build. It downloads the client from GitHub and updates
+only the four Internet Crafters Edge Function files while preserving unrelated functions:
+
+```sh
+npx --yes github:Steve-And-Fay/public-internet-crafters-client#main install netlify \
+  --target ./netlify/edge-functions --force
+```
+
+For example, a Netlify build command can be:
+
+```sh
+npm ci && npx --yes github:Steve-And-Fay/public-internet-crafters-client#main install netlify --target ./netlify/edge-functions --force && npm run build
+```
+
+Configure these site-scoped runtime variables:
 
 ```dotenv
 IC_ANALYTICS_ENABLED=true
@@ -21,11 +34,12 @@ Optional controls:
 
 Trigger a fresh deploy after changing configuration. Test the script endpoint, one page view, one
 named click, and a crawler request. The collector token must not appear in the served browser script
-or HTML.
+or HTML. Tracking `main` intentionally takes the latest reviewed client commit on every deploy; use
+a release tag instead when a customer needs a frozen version.
 
 ## Check this document against
 
 - `src/index.ts`
 - `src/injection.ts`
 - `src/edge/entrypoints/`
-- `extension.yaml`
+- `src/installer.ts`

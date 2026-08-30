@@ -7,14 +7,14 @@ registry. `private: true` prevents an accidental registry release but still perm
 installation. The expected flows are:
 
 ```text
-GitHub production branch -> dedicated Netlify project -> published Netlify Extension -> customer sites
+GitHub production branch -> Netlify build-time installer -> customer site Edge Functions
 GitHub tag or commit -> Git dependency prepare build -> AWS, WordPress, and custom Node projects
 ```
 
 Pin a tag or full commit rather than the default branch:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.1.0"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.0"
 ```
 
 npm installs the dependencies needed by a Git package with a `prepare` script, runs that portable
@@ -22,32 +22,24 @@ build, and records the resolved commit in the customer lockfile. To roll out an 
 tag or update the dependency, commit the lockfile, and deploy. A Git URL does not silently update an
 existing lockfile.
 
-## Extension release
+## Netlify release
 
-1. Create a GitHub repository and push this repository's `main` branch.
-2. Run `npm run verify` before each push.
-3. In Netlify, import the GitHub repository as a dedicated project that only hosts this extension.
-4. As a Netlify Team Owner, create a private extension and select that hosting project.
-5. Copy the generated, nanoid-prefixed slug from Netlify into `extension.yaml`, then commit and push
-   that update.
-6. Keep the extension private while testing it on projects owned by the same Netlify team.
-7. To install it on customer teams, make it public and unlisted, then share its direct installation
-   link. Test carefully first: Netlify does not currently allow a public extension to become private
-   again.
+1. Run `npm run verify` before each push.
+2. Merge the reviewed client update into GitHub `main`.
+3. Deploy a pilot customer whose build command runs `ic-client install netlify` from GitHub `main`.
+4. Verify collection, then allow the remaining customer sites to receive it on their next deploy.
 
 ## Customer rollout
 
-1. Install the extension on the customer's Netlify team.
+1. Add the GitHub installer to the customer's Netlify build command.
 2. Add the site-scoped variables documented in `README.md`.
-3. Deploy the customer site; installation alone does not inject the functions into an old deploy.
+3. Deploy the customer site; the installer refreshes its four generated function files during build.
 4. Verify an HTML page, an intentional click, and a crawler request in the collector.
 5. Confirm query strings and visible page text are absent from stored events.
 
-Publishing a new extension version centralizes maintenance. Customer sites receive that code during
-their next build and deploy; the extension does not silently mutate an already-deployed site.
-
-With continuous deployment enabled on the hosting project, a push to GitHub's production branch
-creates a new Netlify deploy and updates the published extension. No npm registry release is involved.
+Publishing to GitHub centralizes maintenance. Customer sites tracking `main` receive that code during
+their next build and deploy; nothing silently mutates an already-deployed site. No npm registry
+release is involved.
 
 ## Portable artifacts
 
@@ -66,9 +58,7 @@ before expanding beyond a pilot.
 ## Check this document against
 
 - `README.md`
-- `extension.yaml`
-- `netlify.toml`
 - `package.json`
-- `src/index.ts`
+- `src/installer.ts`
 - `scripts/build-portable.mjs`
 - `platforms/`

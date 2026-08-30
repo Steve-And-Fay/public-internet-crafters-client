@@ -35,15 +35,16 @@ browser HTML ──> script injection ─> same-origin ─┘
                                 event endpoint
 ```
 
-Four bundled Edge Functions are injected into enabled customer sites:
+Four bundled Edge Functions are installed into enabled customer sites from this GitHub repository:
 
 - `crawler-observer` runs only for Netlify's `crawler` and `ai-agent` categories.
 - `browser-bootstrap` adds the same-origin client script to browser HTML responses.
 - `browser-script` serves the generated, privacy-minimized browser tracker.
 - `browser-events` validates browser events and forwards them without exposing collector secrets.
 
-The extension owns those functions. Publish an extension update once, then rebuild a customer site
-to inject the latest version on its next deploy.
+The `ic-client` installer owns those files. A Netlify build can run the installer from GitHub's
+`main` branch, so publishing one client update makes it available to every customer on their next
+deploy without an npm registry package.
 
 ## Local development
 
@@ -65,13 +66,18 @@ npm run dev
 ```
 
 Generated Edge Functions live in `.generated/` and are not committed. The generation step bundles
-all local imports because Netlify Extensions do not support local or package imports inside injected
-Edge Functions.
+all local imports so the files copied into a customer repository are self-contained.
 
 ## Configure a Netlify customer site
 
-Install the published extension on the customer's Netlify team, then set these site-scoped
-environment variables:
+Run the GitHub-hosted installer during the customer's Netlify build:
+
+```sh
+npx --yes github:Steve-And-Fay/public-internet-crafters-client#main install netlify \
+  --target ./netlify/edge-functions --force
+```
+
+Then set these site-scoped environment variables:
 
 ```dotenv
 IC_ANALYTICS_ENABLED=true
@@ -89,9 +95,8 @@ Optional variables:
 | `IC_ANALYTICS_INGEST_AUTH_HEADER` | `authorization` | Collector credential header. |
 | `IC_ANALYTICS_INGEST_AUTH_SCHEME` | `Bearer` | Prefix before the token; set to an empty value for raw API keys. |
 
-Trigger a fresh deploy after changing configuration. Environment variables must be scoped to builds
-and runtime so the build can decide which functions to inject and the Edge Functions can reach the
-collector.
+Trigger a fresh deploy after changing configuration. Environment variables must be scoped to runtime
+so the Edge Functions can reach the collector.
 
 To name a high-value click, add `data-ic-track`:
 
@@ -115,18 +120,17 @@ AI-agent category plus the raw user-agent string. The collector can then map val
 the collector means a crawler signature can be corrected once without rebuilding every customer
 site.
 
-## Distribution: GitHub and Netlify, not the npm registry
+## Distribution: GitHub, not the npm registry
 
-This repository is marked `private` in `package.json` and is not intended for the npm registry. Push
-it to a GitHub repository, import that repository as the dedicated Netlify project that hosts the
-extension, and publish the extension from Netlify's extension authoring flow. Netlify builds the
-extension from GitHub whenever the production branch changes.
+This repository is marked `private` in `package.json` and is not intended for the npm registry.
+Netlify builds fetch the installer from GitHub directly. AWS, WordPress, and custom Node projects can
+pin a public GitHub tag or commit instead.
 
 `private: true` prevents registry publication; it does not prevent installing a Git dependency.
 AWS, WordPress, and custom Node projects can pin a public GitHub tag or commit:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.1.0"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.0"
 npx ic-client install wordpress --target ./wp-content/plugins
 npx ic-client install aws --target ./infrastructure
 ```
@@ -135,9 +139,8 @@ The Git dependency runs `prepare` to build portable artifacts, and the customer 
 resolved commit. Updating a customer is deliberate: update the tag or dependency, commit the lockfile,
 and deploy. A Git URL does not silently change an existing lockfile.
 
-Netlify customers install the resulting Netlify Extension instead of copying source. See the
-[Netlify](docs/netlify.md), [AWS](docs/aws.md), [WordPress](docs/wordpress.md), and
-[server error capture](docs/error-capture.md) guides.
+See the [Netlify](docs/netlify.md), [AWS](docs/aws.md), [WordPress](docs/wordpress.md), and [server
+error capture](docs/error-capture.md) guides.
 
 ## Operational limits
 
@@ -152,8 +155,7 @@ Netlify customers install the resulting Netlify Extension instead of copying sou
 
 ## Check this document against
 
-- `src/index.ts`
-- `src/injection.ts`
+- `src/installer.ts`
 - `src/edge/entrypoints/`
 - `src/contracts/analytics-event.ts`
 - `docs/event-contract.md`

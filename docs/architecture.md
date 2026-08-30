@@ -10,10 +10,10 @@ Netlify, AWS, WordPress, and custom Node applications.
 
 ## Why generated Edge Functions exist
 
-Netlify Extension-injected Edge Functions support inline declarations and URL imports, but not local
-module imports. Source remains modular under `src/edge/`; `scripts/build-edge-functions.mjs` uses
-esbuild to produce self-contained files under `.generated/edge-functions/`. The extension injects
-those outputs. `scripts/check-generated.mjs` rejects unexpected files and unsupported imports.
+Source remains modular under `src/edge/`; `scripts/build-edge-functions.mjs` uses esbuild to produce
+self-contained files under `.generated/edge-functions/`. The GitHub-installed CLI copies those
+outputs into a customer's `netlify/edge-functions` directory. `scripts/check-generated.mjs` rejects
+unexpected files and unsupported imports.
 
 The browser tracker follows the same model. Its source is maintained in `src/browser/tracker.ts`,
 bundled to an immediately invoked script, and embedded into the generated `browser-script` function.

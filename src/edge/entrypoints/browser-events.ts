@@ -3,6 +3,7 @@ import {
   analyticsResponse,
   type EdgeFunctionConfig,
   type NetlifyEdgeContext,
+  runtimeCollectionEnabled,
   runtimeDestination,
 } from "../runtime.js";
 
@@ -17,6 +18,10 @@ export default async function browserEvents(
   request: Request,
   context: NetlifyEdgeContext,
 ): Promise<Response> {
+  if (!runtimeCollectionEnabled("browser")) {
+    return analyticsResponse(404, "Analytics collection is disabled");
+  }
+
   if (!isSameOrigin(request)) {
     return analyticsResponse(403, "Cross-origin analytics events are not accepted");
   }

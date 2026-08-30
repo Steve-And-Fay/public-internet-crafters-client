@@ -3,7 +3,7 @@
 Build or install the Git dependency, then copy the plugin:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.1.0"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.0"
 npx ic-client install wordpress --target ./wp-content/plugins
 ```
 

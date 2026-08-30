@@ -29,6 +29,24 @@ function runtimeEnvironment(): NetlifyEnvironment | undefined {
   return runtime.Netlify?.env;
 }
 
+function enabled(value: string | undefined, defaultValue = false): boolean {
+  return value === undefined ? defaultValue : value.trim().toLowerCase() === "true";
+}
+
+export function runtimeCollectionEnabled(
+  channel: "browser" | "crawler",
+  env: NetlifyEnvironment | undefined = runtimeEnvironment(),
+): boolean {
+  if (!enabled(env?.get("IC_ANALYTICS_ENABLED"))) {
+    return false;
+  }
+
+  return enabled(
+    env?.get(channel === "browser" ? "IC_ANALYTICS_BROWSER" : "IC_ANALYTICS_CRAWLERS"),
+    true,
+  );
+}
+
 export function runtimeDestination(
   env: NetlifyEnvironment | undefined = runtimeEnvironment(),
 ): AnalyticsDestination | null {

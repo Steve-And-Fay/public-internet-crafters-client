@@ -5,7 +5,7 @@ const enabled = {
   IC_ANALYTICS_ENABLED: "true",
 };
 
-describe("extension injection", () => {
+describe("build-time function selection", () => {
   it("injects crawler collection only for an enabled site", () => {
     expect(
       shouldInjectAnalyticsFunction({
