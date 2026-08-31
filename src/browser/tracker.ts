@@ -11,6 +11,7 @@ interface PrivacyNavigator extends Navigator {
 }
 
 interface BrowserEvent {
+  collection_mode?: "anonymous";
   attribution?: AnalyticsAttribution;
   error?: AnalyticsError;
   event_id: string;
@@ -47,7 +48,9 @@ function pagePath(): string {
   return window.location.pathname || "/";
 }
 
-const visitorSessionId = sessionId();
+const privacyNavigator = navigator as PrivacyNavigator;
+const anonymous = navigator.doNotTrack === "1" || privacyNavigator.globalPrivacyControl === true;
+const visitorSessionId = anonymous ? undefined : sessionId();
 
 function sessionAttribution(): AnalyticsAttribution | undefined {
   const current = attributionFromUrl(new URL(window.location.href));
@@ -63,11 +66,31 @@ function sessionAttribution(): AnalyticsAttribution | undefined {
   }
 }
 
-const visitorAttribution = sessionAttribution();
+const visitorAttribution = anonymous ? undefined : sessionAttribution();
 const release =
   document.querySelector<HTMLMetaElement>('meta[name="ic-release"]')?.content || "unknown";
 
 function send(event: BrowserEvent): void {
+  if (anonymous) {
+    // One random id per event is for delivery deduplication, never visitor/session linking.
+    const occurredAt = new Date(event.occurred_at);
+    occurredAt.setUTCSeconds(0, 0);
+    void fetch(EVENTS_PATH, {
+      body: JSON.stringify({
+        collection_mode: "anonymous",
+        event_id: event.event_id,
+        event_type: event.event_type,
+        occurred_at: occurredAt.toISOString(),
+        path: event.path,
+      }),
+      credentials: "omit",
+      referrerPolicy: "no-referrer",
+      headers: { "content-type": "application/json" },
+      keepalive: true,
+      method: "POST",
+    }).catch(() => undefined);
+    return;
+  }
   const body = JSON.stringify(event);
   try {
     if (navigator.sendBeacon(EVENTS_PATH, new Blob([body], { type: "application/json" }))) {
@@ -91,7 +114,7 @@ function emitPageView(): void {
     event_type: "page_view",
     occurred_at: new Date().toISOString(),
     path: pagePath(),
-    session_id: visitorSessionId,
+    ...(visitorSessionId ? { session_id: visitorSessionId } : {}),
     ...(visitorAttribution ? { attribution: visitorAttribution } : {}),
   });
 }
@@ -104,7 +127,7 @@ function emitClick(target: Element): void {
     event_type: "click",
     occurred_at: new Date().toISOString(),
     path: pagePath(),
-    session_id: visitorSessionId,
+    ...(visitorSessionId ? { session_id: visitorSessionId } : {}),
     ...(visitorAttribution ? { attribution: visitorAttribution } : {}),
     target: {
       ...(destination ? { destination } : {}),
@@ -144,20 +167,19 @@ function observeRouteChanges(): void {
   addEventListener("popstate", routeChanged);
 }
 
-const privacyNavigator = navigator as PrivacyNavigator;
-if (navigator.doNotTrack !== "1" && privacyNavigator.globalPrivacyControl !== true) {
-  emitPageView();
-  observeRouteChanges();
-  document.addEventListener(
-    "click",
-    (event) => {
-      if (!(event.target instanceof Element)) return;
-      const target = event.target.closest("a,button,[data-ic-track]");
-      if (!target || target.closest("[data-ic-track-ignore]")) return;
-      emitClick(target);
-    },
-    { capture: true },
-  );
+emitPageView();
+observeRouteChanges();
+document.addEventListener(
+  "click",
+  (event) => {
+    if (!(event.target instanceof Element)) return;
+    const target = event.target.closest("a,button,[data-ic-track]");
+    if (!target || target.closest("[data-ic-track-ignore]")) return;
+    emitClick(target);
+  },
+  { capture: true },
+);
+if (!anonymous) {
   addEventListener("error", (event) => emitError(event.error, "window.error"));
   addEventListener("unhandledrejection", (event) => emitError(event.reason, "unhandledrejection"));
 }

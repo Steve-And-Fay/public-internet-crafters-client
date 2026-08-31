@@ -17,7 +17,7 @@ Shared fields:
 | `page.path` | Path only; query string and fragment are removed. |
 
 Crawler events add `request.agent_category`, `client_ip`, `method`, `status_code`, and `user_agent`.
-Browser events add a session-scoped random ID under `properties.session_id`. Click events may add a
+Ordinary browser events add a session-scoped random ID under `properties.session_id`. Click events may add a
 sanitized target kind, explicit tracking name, and destination. Same-site destinations retain only
 the path; external destinations retain only the origin; phone and email destinations become `tel:`
 or `mailto:`.
@@ -25,6 +25,10 @@ or `mailto:`.
 Page views and clicks may include sanitized UTM labels. Paid parameters such as `gclid`, `gbraid`,
 `wbraid`, and `msclkid` become only `paid_click_present: true` and a provider label. Raw paid-click
 values never enter the envelope.
+
+Reduced-data counts use `properties.collection_mode: "anonymous"`, omit all session, target and
+attribution properties, and round `occurred_at` to the minute. They accept only `page_view` and
+`click`, never `error`. See `docs/privacy.md` for the privacy-signal behavior and its limits.
 
 Error events add type, mechanism, release, runtime, up to 20 structural frames, and an allowlisted
 coarse environment. Messages, request bodies, local variables, arbitrary context, and frame URL
@@ -44,6 +48,8 @@ See `examples/events.json` for representative payloads.
 
 - `src/contracts/analytics-event.ts`
 - `src/edge/events/browser.ts`
+- `src/browser/tracker.ts`
+- `docs/privacy.md`
 - `src/edge/events/crawler.ts`
 - `src/errors/server.ts`
 - `examples/events.json`

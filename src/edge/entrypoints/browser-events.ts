@@ -49,6 +49,7 @@ export default async function browserEvents(
     const receivedAt = new Date();
     const url = new URL(request.url);
     const event = normalizeBrowserEvent(JSON.parse(body) as Record<string, unknown>, {
+      anonymous: request.headers.get("dnt") === "1" || request.headers.get("sec-gpc") === "1",
       hostname: url.hostname,
       platform: "netlify",
       platformSiteId: context.site?.id ?? "unknown",

@@ -13,6 +13,7 @@ import {
 } from "../../contracts/analytics-event.js";
 
 interface BrowserEventContext {
+  anonymous?: boolean;
   hostname: string;
   platform: AnalyticsPlatform;
   platformSiteId?: string;
@@ -20,6 +21,7 @@ interface BrowserEventContext {
 }
 
 interface BrowserEventInput {
+  collection_mode?: unknown;
   [key: string]: unknown;
   attribution?: Record<string, unknown>;
   error?: Record<string, unknown>;
@@ -142,12 +144,15 @@ export function normalizeBrowserEvent(
   }
 
   const eventType = input.event_type as "click" | "error" | "page_view";
+  const anonymous = context.anonymous === true || input.collection_mode === "anonymous";
+  if (anonymous && eventType === "error") throw new TypeError("Anonymous mode only accepts counts");
   const properties: Record<string, string> = {};
-  if (eventType !== "error") {
+  if (anonymous) properties.collection_mode = "anonymous";
+  if (!anonymous && eventType !== "error") {
     properties.session_id = safeIdentifier(input.session_id, crypto.randomUUID());
   }
 
-  if (eventType === "click") {
+  if (!anonymous && eventType === "click") {
     const kind = safeLabel(input.target?.kind);
     const name = safeLabel(input.target?.name);
     const destination = sanitizeClickDestination(input.target?.destination, context.hostname);
@@ -158,14 +163,17 @@ export function normalizeBrowserEvent(
   }
 
   const platformSiteId = safeLabel(context.platformSiteId);
-  const attribution = eventType === "error" ? undefined : normalizeAttribution(input.attribution);
+  const attribution =
+    anonymous || eventType === "error" ? undefined : normalizeAttribution(input.attribution);
+  const occurredAt = new Date(safeTimestamp(input.occurred_at, context.receivedAt));
+  if (anonymous) occurredAt.setUTCSeconds(0, 0);
 
   return {
     ...(attribution ? { attribution } : {}),
     ...(eventType === "error" ? { error: normalizeError(input.error) } : {}),
     event_id: safeIdentifier(input.event_id, crypto.randomUUID()),
     event_type: eventType,
-    occurred_at: safeTimestamp(input.occurred_at, context.receivedAt),
+    occurred_at: occurredAt.toISOString(),
     page: { path: normalizePagePath(input.path) },
     ...(Object.keys(properties).length > 0 ? { properties } : {}),
     received_at: context.receivedAt.toISOString(),

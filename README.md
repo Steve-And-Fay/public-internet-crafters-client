@@ -21,7 +21,9 @@ analytics service, or a routing gateway that fans out to several systems.
 
 Query strings and fragments are removed from page paths. The browser client does not collect form
 values, element text, click coordinates, exception messages, email addresses, phone numbers, raw
-paid-click IDs, or persistent visitor IDs. It honors Do Not Track and Global Privacy Control.
+paid-click IDs, or persistent visitor IDs. Do Not Track and Global Privacy Control switch the
+first-party collector to reduced-data anonymous counts (see `docs/privacy.md`). They disable
+session linking, attribution, click details, and browser error collection.
 
 The portal hashes source IP addresses and retains raw events for 90 days. Daily aggregates and
 grouped issues remain after exact events expire.
