@@ -11,6 +11,11 @@ import type {
   AnalyticsEventType,
 } from "../contracts/analytics-event.js";
 import { safeLabel } from "../contracts/analytics-event.js";
+import {
+  parsePublicPaths,
+  publicDestinationAllowed,
+  publicPathAllowed,
+} from "../contracts/public-paths.js";
 import { attributionFromUrl } from "./attribution.js";
 import { structuralBrowserError } from "./errors.js";
 
@@ -63,7 +68,11 @@ function pagePath(): string {
 
 const privacyNavigator = navigator as PrivacyNavigator;
 const anonymous = navigator.doNotTrack === "1" || privacyNavigator.globalPrivacyControl === true;
-const visitorSessionId = anonymous ? undefined : sessionId();
+const publicPaths = parsePublicPaths(
+  document.querySelector<HTMLMetaElement>('meta[name="ic-public-paths"]')?.content,
+);
+const initiallyPublic = publicPathAllowed(pagePath(), publicPaths);
+const visitorSessionId = anonymous || !initiallyPublic ? undefined : sessionId();
 
 function sessionAttribution(): AnalyticsAttribution | undefined {
   const current = attributionFromUrl(new URL(window.location.href));
@@ -79,11 +88,12 @@ function sessionAttribution(): AnalyticsAttribution | undefined {
   }
 }
 
-const visitorAttribution = anonymous ? undefined : sessionAttribution();
+const visitorAttribution = anonymous || !initiallyPublic ? undefined : sessionAttribution();
 const release =
   document.querySelector<HTMLMetaElement>('meta[name="ic-release"]')?.content || "unknown";
 
 function send(event: BrowserEvent): void {
+  if (!publicPathAllowed(event.path, publicPaths)) return;
   if (anonymous) {
     // One random id per event is for delivery deduplication, never visitor/session linking.
     const occurredAt = new Date(event.occurred_at);
@@ -133,8 +143,10 @@ function emitPageView(): void {
 }
 
 function emitClick(target: Element, formAction?: "form_submit" | "form_success"): void {
+  if (!publicPathAllowed(pagePath(), publicPaths)) return;
   const hostname = new URL(window.location.href).hostname;
   const href = target instanceof HTMLAnchorElement ? target.getAttribute("href") : null;
+  if (!publicDestinationAllowed(href, hostname, publicPaths)) return;
   const destination = href ? sanitizeClickDestination(href, hostname) : undefined;
   const name = safeLabel(target.getAttribute("data-ic-track"));
   const explicit = safeActionType(target.getAttribute("data-ic-action"));
@@ -171,6 +183,7 @@ function emitClick(target: Element, formAction?: "form_submit" | "form_success")
 }
 
 function emitError(value: unknown, mechanism: "unhandledrejection" | "window.error"): void {
+  if (!publicPathAllowed(pagePath(), publicPaths)) return;
   send({
     error: structuralBrowserError(value, { mechanism, release, userAgent: navigator.userAgent }),
     event_id: randomId(),
@@ -220,6 +233,7 @@ if (!anonymous) {
     "submit",
     (event) => {
       if (
+        !publicPathAllowed(pagePath(), publicPaths) ||
         !(event.target instanceof HTMLFormElement) ||
         event.target.closest("[data-ic-track-ignore]")
       )
@@ -234,6 +248,7 @@ if (!anonymous) {
   document.addEventListener("ic:form-success", (event) => {
     const form = event.target;
     if (
+      !publicPathAllowed(pagePath(), publicPaths) ||
       !(form instanceof HTMLFormElement) ||
       !pendingForms.has(form) ||
       form.closest("[data-ic-track-ignore]")
@@ -246,6 +261,7 @@ if (!anonymous) {
   });
   const vendorConfirmations = new Set<string>();
   document.addEventListener("ic:lead-success", (event) => {
+    if (!publicPathAllowed(pagePath(), publicPaths)) return;
     // For integrations that validate a vendor success callback (e.g. cross-origin iframe).
     // The callback ID is used only for in-memory deduplication, never transmitted or stored.
     const detail = (event as CustomEvent).detail;

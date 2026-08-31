@@ -1,3 +1,4 @@
+import { publicDestinationAllowed, publicPathAllowed } from "../../contracts/public-paths.js";
 import { normalizeBrowserEvent } from "../events/browser.js";
 import {
   analyticsResponse,
@@ -5,6 +6,7 @@ import {
   type NetlifyEdgeContext,
   runtimeCollectionEnabled,
   runtimeDestination,
+  runtimePublicPaths,
 } from "../runtime.js";
 
 const MAX_BODY_BYTES = 8_192;
@@ -48,7 +50,16 @@ export default async function browserEvents(
   try {
     const receivedAt = new Date();
     const url = new URL(request.url);
-    const event = normalizeBrowserEvent(JSON.parse(body) as Record<string, unknown>, {
+    const input = JSON.parse(body) as Record<string, unknown>;
+    const policy = runtimePublicPaths();
+    const target = input?.target as Record<string, unknown> | undefined;
+    if (
+      !publicPathAllowed(input?.path, policy) ||
+      !publicDestinationAllowed(target?.destination, url.hostname, policy)
+    ) {
+      return analyticsResponse(204);
+    }
+    const event = normalizeBrowserEvent(input, {
       anonymous: request.headers.get("dnt") === "1" || request.headers.get("sec-gpc") === "1",
       hostname: url.hostname,
       platform: "netlify",

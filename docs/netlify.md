@@ -34,6 +34,7 @@ Optional controls:
 | --- | --- | --- |
 | `IC_ANALYTICS_CRAWLERS` | `true` | Disable crawler and AI-agent observation with `false`. |
 | `IC_ANALYTICS_BROWSER` | `true` | Disable browser page views, clicks, attribution, and errors. |
+| `IC_ANALYTICS_PUBLIC_PATHS` | unset | JSON public-page allowlist for sites with private paths; see [public pages](public-pages.md). |
 | `IC_ANALYTICS_INGEST_AUTH_HEADER` | `authorization` | Collector credential header. |
 | `IC_ANALYTICS_INGEST_AUTH_SCHEME` | `Bearer` | Prefix before the token; empty means a raw API key. |
 
@@ -58,4 +59,5 @@ they cannot receive automatic tracker injection.
 - `src/installer.ts`
 - `src/doctor.ts`
 - `src/edge/health.ts`
+- `src/contracts/public-paths.ts`
 - `tests/browser-bootstrap-response.test.ts`

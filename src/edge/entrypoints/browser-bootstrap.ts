@@ -1,21 +1,24 @@
+import { publicPathAllowed } from "../../contracts/public-paths.js";
 import { injectBrowserTracker } from "../browser-bootstrap.js";
 import {
   type EdgeFunctionConfig,
   type NetlifyEdgeContext,
   runtimeCollectionEnabled,
   runtimeDestination,
+  runtimePublicPaths,
   runtimeRelease,
 } from "../runtime.js";
 
 const BODY_HEADERS = ["content-encoding", "content-length", "content-md5", "etag"];
 
 export default async function browserBootstrap(
-  _request: Request,
+  request: Request,
   context: NetlifyEdgeContext,
 ): Promise<Response> {
   const response = await context.next();
   if (
     !runtimeCollectionEnabled("browser") ||
+    !publicPathAllowed(new URL(request.url).pathname, runtimePublicPaths()) ||
     !runtimeDestination() ||
     !response.ok ||
     !response.body
@@ -28,7 +31,11 @@ export default async function browserBootstrap(
     return response;
   }
 
-  const transformed = injectBrowserTracker(await response.text(), runtimeRelease());
+  const transformed = injectBrowserTracker(
+    await response.text(),
+    runtimeRelease(),
+    runtimePublicPaths(),
+  );
   // Reading text consumes the original body, even when injection is a no-op.
   // Rebuild it in both cases and drop validators/encoding for the decoded body.
   const headers = new Headers(response.headers);

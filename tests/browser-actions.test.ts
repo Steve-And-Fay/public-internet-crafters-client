@@ -48,10 +48,11 @@ class TestForm extends TestElement {
   }
 }
 
-function tracker(anonymous = false) {
+function tracker(anonymous = false, publicPaths?: string) {
   const listeners: Record<string, (event: { target: TestElement; detail?: unknown }) => void> = {};
   const storage = { getItem: vi.fn(), setItem: vi.fn() };
   const payloads: Record<string, unknown>[] = [];
+  const location = { pathname: "/contact", href: "https://example.com/contact" };
   class TestBlob {
     constructor(parts: string[]) {
       payloads.push(JSON.parse(parts.join("")));
@@ -67,7 +68,7 @@ function tracker(anonymous = false) {
     HTMLAnchorElement: TestAnchor,
     HTMLFormElement: TestForm,
     crypto: { randomUUID: () => "test-event" },
-    window: { location: { pathname: "/contact", href: "https://example.com/contact" } },
+    window: { location },
     history: { pushState: vi.fn(), replaceState: vi.fn() },
     sessionStorage: storage,
     navigator: { doNotTrack: anonymous ? "1" : "0", sendBeacon: () => true, userAgent: "Browser" },
@@ -78,16 +79,45 @@ function tracker(anonymous = false) {
     queueMicrotask: (fn: () => void) => fn(),
     addEventListener: vi.fn(),
     document: {
-      querySelector: () => null,
+      querySelector: (selector: string) =>
+        selector === 'meta[name="ic-public-paths"]' && publicPaths !== undefined
+          ? { content: publicPaths }
+          : null,
       addEventListener: (name: string, fn: (event: { target: TestElement }) => void) => {
         listeners[name] = fn;
       },
     },
   });
-  return { payloads, listeners, storage };
+  return { payloads, listeners, storage, location };
 }
 
 describe("useful website actions", () => {
+  it.each([false, true])(
+    "does not record private link destinations or actions on private pages (anonymous %s)",
+    (anonymous) => {
+      const runtime = tracker(anonymous, '["/contact"]');
+      runtime.listeners.click?.({
+        target: new TestAnchor({
+          href: "/r/private-room?owner_token=secret",
+          "data-ic-track": "private-room",
+        }),
+      });
+      expect(runtime.payloads).toHaveLength(1);
+      runtime.location.pathname = "/r/private-room";
+      runtime.location.href = "https://example.com/r/private-room";
+      const form = new TestForm({ "data-ic-track": "private-form" });
+      runtime.listeners.click?.({ target: new TestAnchor({ href: "tel:secret" }) });
+      runtime.listeners.submit?.({ target: form });
+      runtime.listeners["ic:form-success"]?.({ target: form });
+      runtime.listeners["ic:lead-success"]?.({
+        target: new TestElement("DIV"),
+        detail: { name: "private", id: "private-id" },
+      });
+      runtime.location.pathname = "/contact";
+      runtime.listeners["ic:form-success"]?.({ target: form });
+      expect(runtime.payloads).toHaveLength(1);
+    },
+  );
   it.each([
     ["tel:+15205551234", "call"],
     ["mailto:private@example.com?body=secret", "email"],

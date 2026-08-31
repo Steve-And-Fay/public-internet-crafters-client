@@ -7,7 +7,7 @@ source mapping.
 Install and copy the built adapter:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.3.0"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.3.1"
 npx ic-client install aws --target ./infrastructure
 sam build --template-file infrastructure/internet-crafters-analytics-aws/template.yaml
 sam deploy --guided
