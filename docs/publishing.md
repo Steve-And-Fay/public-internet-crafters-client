@@ -14,7 +14,7 @@ GitHub tag or commit -> Git dependency prepare build -> AWS, WordPress, and cust
 For portable dependencies, pin a tag or full commit. Netlify's build-time installer can track `main`:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.3"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.4"
 ```
 
 npm installs the dependencies needed by a Git package with a `prepare` script, runs that portable

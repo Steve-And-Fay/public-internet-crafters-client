@@ -1,3 +1,4 @@
+// cspell:ignore KHTML
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { NETLIFY_EDGE_FUNCTIONS } from "./installer.js";
@@ -87,7 +88,8 @@ export async function checkNetlifyInstallation({
       signal: AbortSignal.timeout(10_000),
       headers: {
         // Netlify routes these endpoints only for its browser category.
-        "user-agent": "Mozilla/5.0 InternetCraftersInstallationCheck",
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
         "cache-control": "no-cache",
         dnt: "1",
         "sec-gpc": "1",

@@ -96,8 +96,8 @@ Optional variables:
 | `IC_ANALYTICS_INGEST_AUTH_HEADER` | `authorization` | Collector credential header. |
 | `IC_ANALYTICS_INGEST_AUTH_SCHEME` | `Bearer` | Prefix before the token; set to an empty value for raw API keys. |
 
-Trigger a fresh deploy after changing configuration. Environment variables must be scoped to runtime
-so the Edge Functions can reach the collector.
+Trigger a fresh deploy after changing configuration. Select Netlify's **Functions** environment
+scope so the Edge Functions can reach the collector at runtime; Builds alone is insufficient.
 
 On Netlify, omit `IC_ANALYTICS_RELEASE` to use `COMMIT_REF` or `DEPLOY_ID` automatically. Set an
 explicit release only when your build supplies a real release identifier, not a fixed placeholder.
@@ -144,7 +144,7 @@ pin a public GitHub tag or commit instead.
 AWS, WordPress, and custom Node projects can pin a public GitHub tag or commit:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.3"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.4"
 npx ic-client install wordpress --target ./wp-content/plugins
 npx ic-client install aws --target ./infrastructure
 ```

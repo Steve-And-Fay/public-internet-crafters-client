@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4
+
+- Use a complete browser user agent for Netlify's browser-classified health routes.
+- Name the Functions environment scope explicitly in Netlify setup instructions.
+
 ## 0.2.3
 
 - Preserve readable Netlify HTML responses when tracker injection makes no change.
