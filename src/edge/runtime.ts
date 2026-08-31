@@ -7,6 +7,7 @@ export interface NetlifyEnvironment {
 }
 
 export interface NetlifyEdgeContext {
+  deploy?: { id?: string };
   ip?: string;
   next(): Promise<Response>;
   requestId?: string;
@@ -65,9 +66,16 @@ export function runtimeDestination(
   });
 }
 
-export function runtimeRelease(env: NetlifyEnvironment | undefined = runtimeEnvironment()): string {
+export function runtimeRelease(
+  env: NetlifyEnvironment | undefined = runtimeEnvironment(),
+  deploy?: NetlifyEdgeContext["deploy"],
+): string {
   return (
-    env?.get("IC_ANALYTICS_RELEASE") || env?.get("COMMIT_REF") || env?.get("DEPLOY_ID") || "unknown"
+    env?.get("IC_ANALYTICS_RELEASE") ||
+    deploy?.id ||
+    env?.get("COMMIT_REF") ||
+    env?.get("DEPLOY_ID") ||
+    "unknown"
   );
 }
 

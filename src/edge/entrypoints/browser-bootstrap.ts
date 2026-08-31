@@ -33,7 +33,7 @@ export default async function browserBootstrap(
 
   const transformed = injectBrowserTracker(
     await response.text(),
-    runtimeRelease(),
+    runtimeRelease(undefined, context.deploy),
     runtimePublicPaths(),
   );
   // Reading text consumes the original body, even when injection is a no-op.
