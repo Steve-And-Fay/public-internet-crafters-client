@@ -11,10 +11,10 @@ GitHub production branch -> Netlify build-time installer -> customer site Edge F
 GitHub tag or commit -> Git dependency prepare build -> AWS, WordPress, and custom Node projects
 ```
 
-Pin a tag or full commit rather than the default branch:
+For portable dependencies, pin a tag or full commit. Netlify's build-time installer can track `main`:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.1"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.3"
 ```
 
 npm installs the dependencies needed by a Git package with a `prepare` script, runs that portable
@@ -24,18 +24,27 @@ existing lockfile.
 
 ## Netlify release
 
-1. Run `npm run verify` before each push.
-2. Merge the reviewed client update into GitHub `main`.
-3. Deploy a pilot customer whose build command runs `ic-client install netlify` from GitHub `main`.
-4. Verify collection, then allow the remaining customer sites to receive it on their next deploy.
+1. Update `package.json`, both root versions in `package-lock.json`, the WordPress header/cache
+   version, and pinned installation examples together. The consistency tests enforce this.
+2. Run `npm run verify` before each push and smoke-test installation from the packaged artifact.
+3. Merge the reviewed client update into GitHub `main`, then create the matching `v<version>` tag at
+   that exact commit. Tags are immutable rollback points; never move an existing release tag.
+4. Deploy a pilot customer whose build command runs `ic-client install netlify` from GitHub `main`.
+5. Run `ic-client doctor netlify --url https://customer.example.com` from the same release, then
+   verify collection in the portal. The doctor checks configuration, not event ingestion.
+6. Allow remaining customer sites to receive the update on their next deploy.
 
 ## Customer rollout
 
-1. Add the GitHub installer to the customer's Netlify build command.
-2. Add the site-scoped variables documented in `README.md`.
+1. Register the client and exact site hostname in the portal and create a unique installation token.
+   Each original, rebuilt, or preview hostname needs a separate installation; do not reuse another site's token.
+2. Add the GitHub installer to the customer's Netlify build command and the production-scoped
+   runtime variables documented in `README.md`. Review privacy disclosures and consent controls.
 3. Deploy the customer site; the installer refreshes its four generated function files during build.
-4. Verify an HTML page, an intentional click, and a crawler request in the collector.
-5. Confirm query strings and visible page text are absent from stored events.
+4. Run the [read-only health check](installation-health.md), then verify a normal HTML page visit,
+   an intentional click, and crawler collection in the portal. Check the reduced-data privacy mode.
+5. Confirm query strings, credentials, and visible page text are absent from stored events. Do not
+   manufacture repeated errors or send emails as an installation test.
 
 Publishing to GitHub centralizes maintenance. Customer sites tracking `main` receive that code during
 their next build and deploy; nothing silently mutates an already-deployed site. No npm registry
@@ -60,5 +69,7 @@ before expanding beyond a pilot.
 - `README.md`
 - `package.json`
 - `src/installer.ts`
+- `src/doctor.ts`
+- `tests/release-consistency.test.ts`
 - `scripts/build-portable.mjs`
 - `platforms/`

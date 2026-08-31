@@ -29,10 +29,8 @@ export default async function browserBootstrap(
   }
 
   const transformed = injectBrowserTracker(await response.text(), runtimeRelease());
-  if (!transformed.injected) {
-    return response;
-  }
-
+  // Reading text consumes the original body, even when injection is a no-op.
+  // Rebuild it in both cases and drop validators/encoding for the decoded body.
   const headers = new Headers(response.headers);
   for (const header of BODY_HEADERS) headers.delete(header);
   return new Response(transformed.html, {

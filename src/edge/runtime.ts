@@ -22,7 +22,7 @@ export interface EdgeFunctionConfig {
   path: string | string[];
 }
 
-function runtimeEnvironment(): NetlifyEnvironment | undefined {
+export function runtimeEnvironment(): NetlifyEnvironment | undefined {
   const runtime = globalThis as typeof globalThis & {
     Netlify?: { env?: NetlifyEnvironment };
   };

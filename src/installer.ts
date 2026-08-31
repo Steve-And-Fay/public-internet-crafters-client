@@ -17,7 +17,7 @@ interface InstallAdapterResult {
   files: string[];
 }
 
-const NETLIFY_EDGE_FUNCTIONS = [
+export const NETLIFY_EDGE_FUNCTIONS = [
   "browser-bootstrap.js",
   "browser-events.js",
   "browser-script.js",
