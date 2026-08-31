@@ -50,7 +50,8 @@ deploy without an npm registry package.
 
 ## Local development
 
-Requires Node.js 20.12.2 or newer.
+Requires Node.js 20.12.2 or newer. The development test suite also requires PHP for WordPress
+adapter parity tests; customer Netlify builds do not need PHP.
 
 ```sh
 npm install
@@ -121,6 +122,11 @@ To name a high-value click, add `data-ic-track`:
 The resulting event keeps `pricing-contact` and `/contact`, but not the link text or query string.
 Use `data-ic-track-ignore` on an element or ancestor to suppress click collection.
 
+Version 0.3.0 registers dedicated call, email, directions, download, outbound, submit-button,
+form-attempt and confirmed-form events. See [contact actions](docs/contact-actions.md) for the
+event names and the success hook required on each form. A contact total is derived from those
+events; it is not a count of unique people. Deploy compatible ingest validation before this client.
+
 ## Provider integration
 
 The default webhook adapter posts the canonical JSON envelope to any HTTPS URL. Add third-party
@@ -144,7 +150,7 @@ pin a public GitHub tag or commit instead.
 AWS, WordPress, and custom Node projects can pin a public GitHub tag or commit:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.4"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.3.0"
 npx ic-client install wordpress --target ./wp-content/plugins
 npx ic-client install aws --target ./infrastructure
 ```

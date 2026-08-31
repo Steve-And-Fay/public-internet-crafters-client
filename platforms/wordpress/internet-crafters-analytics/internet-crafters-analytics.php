@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Internet Crafters Analytics
  * Description: Privacy-minimized traffic, crawler, campaign, click, and error telemetry for the Internet Crafters portal.
- * Version: 0.2.4
+ * Version: 0.3.0
  * Requires PHP: 7.4
  * Author: Internet Crafters
  * License: GPL-2.0-or-later
@@ -12,7 +12,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('IC_ANALYTICS_PLUGIN_VERSION', '0.2.4');
+define('IC_ANALYTICS_PLUGIN_VERSION', '0.3.0');
 define('IC_ANALYTICS_BROWSER_ROUTE', '/__ic/analytics/v1/events');
 
 function ic_analytics_setting($constant, $environment, $default = '')
@@ -181,7 +181,8 @@ function ic_analytics_normalize_error_frame($frame)
 
 function ic_analytics_normalize_browser_event($input)
 {
-    if (! is_array($input) || ! isset($input['event_type']) || ! in_array($input['event_type'], array('page_view', 'click', 'error'), true)) {
+    $actions = array('phone_click'=>'call', 'directions_click'=>'directions', 'form_submit_click'=>'form_submit_click', 'form_submit'=>'form_submit', 'generate_lead'=>'form_success', 'email_click'=>'email', 'file_download'=>'download', 'outbound_click'=>'outbound');
+    if (! is_array($input) || ! isset($input['event_type']) || (! isset($actions[$input['event_type']]) && ! in_array($input['event_type'], array('page_view', 'click', 'error'), true))) {
         return null;
     }
 
@@ -192,6 +193,7 @@ function ic_analytics_normalize_browser_event($input)
     if ($anonymous && $type === 'error') {
         return null;
     }
+    if ($anonymous && isset($actions[$type])) $type = 'click';
     $event = array(
         'schema_version' => 1,
         'event_id' => ic_analytics_identifier(isset($input['event_id']) ? $input['event_id'] : null, wp_generate_uuid4()),
@@ -209,8 +211,13 @@ function ic_analytics_normalize_browser_event($input)
         $properties = array(
             'session_id' => ic_analytics_identifier(isset($input['session_id']) ? $input['session_id'] : null, wp_generate_uuid4()),
         );
-        if ($type === 'click' && isset($input['target']) && is_array($input['target'])) {
-            $target = $input['target'];
+        if ($type === 'click' || isset($actions[$type])) {
+            $target = isset($input['target']) && is_array($input['target']) ? $input['target'] : array();
+            if (isset($actions[$type])) {
+                $properties['action_type'] = $actions[$type];
+            } elseif (isset($target['action']) && in_array($target['action'], $actions, true)) {
+                $properties['action_type'] = $target['action'];
+            }
             $kind = ic_analytics_identifier(isset($target['kind']) ? $target['kind'] : null, '', 128);
             $name = ic_analytics_identifier(isset($target['name']) ? $target['name'] : null, '', 128);
             if ($kind !== '') {

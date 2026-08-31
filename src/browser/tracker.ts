@@ -1,4 +1,16 @@
-import type { AnalyticsAttribution, AnalyticsError } from "../contracts/analytics-event.js";
+import {
+  ACTION_EVENT_TYPES,
+  type AnalyticsActionType,
+  destinationAction,
+  safeActionType,
+  sanitizeClickDestination,
+} from "../contracts/actions.js";
+import type {
+  AnalyticsAttribution,
+  AnalyticsError,
+  AnalyticsEventType,
+} from "../contracts/analytics-event.js";
+import { safeLabel } from "../contracts/analytics-event.js";
 import { attributionFromUrl } from "./attribution.js";
 import { structuralBrowserError } from "./errors.js";
 
@@ -15,11 +27,12 @@ interface BrowserEvent {
   attribution?: AnalyticsAttribution;
   error?: AnalyticsError;
   event_id: string;
-  event_type: "click" | "error" | "page_view";
+  event_type: Exclude<AnalyticsEventType, "crawler_page_view">;
   occurred_at: string;
   path: string;
   session_id?: string;
   target?: {
+    action?: AnalyticsActionType;
     destination?: string;
     kind: string;
     name?: string;
@@ -79,7 +92,7 @@ function send(event: BrowserEvent): void {
       body: JSON.stringify({
         collection_mode: "anonymous",
         event_id: event.event_id,
-        event_type: event.event_type,
+        event_type: event.event_type === "page_view" ? "page_view" : "click",
         occurred_at: occurredAt.toISOString(),
         path: event.path,
       }),
@@ -119,19 +132,39 @@ function emitPageView(): void {
   });
 }
 
-function emitClick(target: Element): void {
-  const destination = target instanceof HTMLAnchorElement ? target.getAttribute("href") : undefined;
-  const name = target.getAttribute("data-ic-track") || undefined;
+function emitClick(target: Element, formAction?: "form_submit" | "form_success"): void {
+  const hostname = new URL(window.location.href).hostname;
+  const href = target instanceof HTMLAnchorElement ? target.getAttribute("href") : null;
+  const destination = href ? sanitizeClickDestination(href, hostname) : undefined;
+  const name = safeLabel(target.getAttribute("data-ic-track"));
+  const explicit = safeActionType(target.getAttribute("data-ic-action"));
+  const type = target.getAttribute("type")?.toLowerCase();
+  const submitButton =
+    ((target.tagName === "BUTTON" && (!type || type === "submit")) ||
+      (target.tagName === "INPUT" && (type === "submit" || type === "image"))) &&
+    (target.closest("form") !== null || target.hasAttribute("form"));
+  const action = formAction
+    ? formAction
+    : explicit && explicit !== "form_submit" && explicit !== "form_success"
+      ? explicit
+      : submitButton
+        ? "form_submit_click"
+        : target instanceof HTMLAnchorElement && target.hasAttribute("download")
+          ? "download"
+          : href
+            ? destinationAction(href, hostname)
+            : undefined;
   send({
     event_id: randomId(),
-    event_type: "click",
+    event_type: action ? ACTION_EVENT_TYPES[action] : "click",
     occurred_at: new Date().toISOString(),
     path: pagePath(),
     ...(visitorSessionId ? { session_id: visitorSessionId } : {}),
     ...(visitorAttribution ? { attribution: visitorAttribution } : {}),
     target: {
+      ...(action ? { action } : {}),
       ...(destination ? { destination } : {}),
-      kind: target instanceof HTMLAnchorElement ? "link" : "button",
+      kind: formAction ? "form" : target instanceof HTMLAnchorElement ? "link" : "button",
       ...(name ? { name } : {}),
     },
   });
@@ -173,13 +206,66 @@ document.addEventListener(
   "click",
   (event) => {
     if (!(event.target instanceof Element)) return;
-    const target = event.target.closest("a,button,[data-ic-track]");
+    const target = event.target.closest(
+      'a,button,input[type="submit"],input[type="image"],[data-ic-track],[data-ic-action]',
+    );
     if (!target || target.closest("[data-ic-track-ignore]")) return;
     emitClick(target);
   },
   { capture: true },
 );
 if (!anonymous) {
+  const pendingForms = new WeakSet<HTMLFormElement>();
+  document.addEventListener(
+    "submit",
+    (event) => {
+      if (
+        !(event.target instanceof HTMLFormElement) ||
+        event.target.closest("[data-ic-track-ignore]")
+      )
+        return;
+      // Native validation precedes this event. Application/network success does not.
+      // Never read FormData, control values, action URLs, or field names.
+      pendingForms.add(event.target);
+      emitClick(event.target, "form_submit");
+    },
+    { capture: true },
+  );
+  document.addEventListener("ic:form-success", (event) => {
+    const form = event.target;
+    if (
+      !(form instanceof HTMLFormElement) ||
+      !pendingForms.has(form) ||
+      form.closest("[data-ic-track-ignore]")
+    )
+      return;
+    // The site's success handler dispatches this ONLY after its backend accepts the form.
+    // One confirmation per observed attempt. Never infer success from a thank-you URL.
+    pendingForms.delete(form);
+    emitClick(form, "form_success");
+  });
+  const vendorConfirmations = new Set<string>();
+  document.addEventListener("ic:lead-success", (event) => {
+    // For integrations that validate a vendor success callback (e.g. cross-origin iframe).
+    // The callback ID is used only for in-memory deduplication, never transmitted or stored.
+    const detail = (event as CustomEvent).detail;
+    const name = safeLabel(detail?.name);
+    const id = safeLabel(detail?.id);
+    if (!name || !id) return;
+    const key = `${name}:${id}`;
+    if (vendorConfirmations.has(key)) return;
+    if (vendorConfirmations.size >= 100) return;
+    vendorConfirmations.add(key);
+    send({
+      event_id: randomId(),
+      event_type: "generate_lead",
+      occurred_at: new Date().toISOString(),
+      path: pagePath(),
+      ...(visitorSessionId ? { session_id: visitorSessionId } : {}),
+      ...(visitorAttribution ? { attribution: visitorAttribution } : {}),
+      target: { action: "form_success", kind: "form", name },
+    });
+  });
   addEventListener("error", (event) => emitError(event.error, "window.error"));
   addEventListener("unhandledrejection", (event) => emitError(event.reason, "unhandledrejection"));
 }

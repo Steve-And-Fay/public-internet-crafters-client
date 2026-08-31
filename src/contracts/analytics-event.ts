@@ -1,6 +1,11 @@
 export const ANALYTICS_SCHEMA_VERSION = 1 as const;
 
-export type AnalyticsEventType = "click" | "crawler_page_view" | "error" | "page_view";
+export type AnalyticsEventType =
+  | import("./actions.js").ActionEventType
+  | "click"
+  | "crawler_page_view"
+  | "error"
+  | "page_view";
 export type AnalyticsSource =
   | "aws-cloudfront"
   | "aws-lambda"

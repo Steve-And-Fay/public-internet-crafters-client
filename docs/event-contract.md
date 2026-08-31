@@ -9,7 +9,7 @@ Shared fields:
 | --- | --- |
 | `schema_version` | Currently `1`. |
 | `event_id` | Request ID or browser-generated event ID. |
-| `event_type` | `crawler_page_view`, `page_view`, `click`, or `error`. |
+| `event_type` | `crawler_page_view`, `page_view`, `click`, `error`, or a registered [dedicated action](contact-actions.md). |
 | `occurred_at` | ISO 8601 UTC timestamp at the source. |
 | `received_at` | Optional edge receipt time for browser events. |
 | `source` | `netlify-edge`, `aws-cloudfront`, `aws-lambda`, `wordpress`, or `browser`. |
