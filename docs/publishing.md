@@ -14,7 +14,7 @@ GitHub tag or commit -> Git dependency prepare build -> AWS, WordPress, and cust
 For portable dependencies, pin a tag or full commit. Netlify's build-time installer can track `main`:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.3.1"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.3.2"
 ```
 
 npm installs the dependencies needed by a Git package with a `prepare` script, runs that portable
@@ -38,6 +38,9 @@ existing lockfile.
 
 1. Register the client and exact site hostname in the portal and create a unique installation token.
    Each original, rebuilt, or preview hostname needs a separate installation; do not reuse another site's token.
+   When one Netlify project serves multiple verified hosts without redirecting, use the exact-host
+   credential map in [Netlify installation](netlify.md). Register each host under the verified
+   existing portal site; keep the original event hostname and tenant boundary intact.
 2. Add the GitHub installer to the customer's Netlify build command and the production-scoped
    runtime variables documented in `README.md`. Review privacy disclosures and consent controls.
 3. Deploy the customer site; the installer refreshes its four generated function files during build.

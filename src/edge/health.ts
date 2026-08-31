@@ -4,12 +4,14 @@ import {
   runtimeCollectionEnabled,
   runtimeEnvironment,
   runtimePublicPaths,
+  runtimeToken,
 } from "./runtime.js";
 
 export const NETLIFY_HEALTH_PATH = "/__ic/analytics/v1/health";
 
 export function netlifyHealth(
   env: NetlifyEnvironment | undefined = runtimeEnvironment(),
+  hostname?: string,
 ): Response {
   const browserEnabled = runtimeCollectionEnabled("browser", env);
   const crawlersEnabled = runtimeCollectionEnabled("crawler", env);
@@ -21,7 +23,7 @@ export function netlifyHealth(
       url.protocol === "https:" &&
       !url.username &&
       !url.password &&
-      Boolean(env?.get("IC_ANALYTICS_INGEST_TOKEN")?.trim());
+      Boolean(runtimeToken(env, hostname)?.trim());
   } catch {
     // Health responses never echo collector URLs, credentials, or raw errors.
   }

@@ -42,7 +42,7 @@ export default async function browserEvents(
     return analyticsResponse(413, "Analytics event is too large");
   }
 
-  const destination = runtimeDestination();
+  const destination = runtimeDestination(undefined, new URL(request.url).hostname);
   if (!destination) {
     return analyticsResponse(503, "Analytics destination is not configured");
   }

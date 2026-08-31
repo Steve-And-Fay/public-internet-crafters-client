@@ -28,6 +28,30 @@ preview hosts remain disabled unless explicitly
 registered for collection. The installer itself does not need the collector token at build time.
 Omit `IC_ANALYTICS_RELEASE` to use `COMMIT_REF` or `DEPLOY_ID`, or provide your real release identifier.
 
+## Multiple hosts on one Netlify project
+
+Check actual redirect behavior; Netlify's configured primary domain does not prove every domain
+alias redirects to it. Starting in 0.3.2, projects serving more than one verified hostname can set
+`IC_ANALYTICS_INGEST_TOKENS_BY_HOST` to a JSON object mapping each exact hostname to its own portal
+installation token. Keep all installations under the verified site's existing organization.
+
+```dotenv
+IC_ANALYTICS_INGEST_TOKENS_BY_HOST={"example.com":"primary-installation-token","www.example.com":"www-installation-token","alias.example.com":"alias-installation-token"}
+```
+
+Store the entire value as a **secret**, in **production context / Functions scope** only. Include
+the primary host as well as every alias that serves pages directly. Use lowercase DNS names only,
+without schemes, ports, paths, wildcards, trailing dots, or implicit `www` matching. The map supports
+1–20 hosts, is bounded to 32,768 characters, and each token must be 1–1,024 printable non-whitespace
+ASCII characters. A malformed map or unmapped host disables forwarding and HTML injection; health
+returns misconfigured. The map takes precedence over `IC_ANALYTICS_INGEST_TOKEN` and never falls back
+to that token for missing hosts. With no map variable, existing single-token behavior is unchanged.
+
+Browser events and crawler requests retain their actual hostname and use only that host's credential.
+No domain redirect, tenant reassignment, or portal hostname-check exemption is introduced. Health
+reports readiness for the host being checked, without exposing the map, tokens, or collector URL.
+Run the doctor and confirm a normal visit separately on each configured non-redirecting host.
+
 Optional controls:
 
 | Variable | Default | Purpose |
@@ -61,3 +85,5 @@ they cannot receive automatic tracker injection.
 - `src/edge/health.ts`
 - `src/contracts/public-paths.ts`
 - `tests/browser-bootstrap-response.test.ts`
+- `src/edge/runtime.ts`
+- `tests/netlify-host-credentials.test.ts`

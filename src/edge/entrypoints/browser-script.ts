@@ -3,7 +3,8 @@ import { NETLIFY_HEALTH_PATH, netlifyHealth } from "../health.js";
 import type { EdgeFunctionConfig } from "../runtime.js";
 
 export default function browserScript(request: Request): Response {
-  if (new URL(request.url).pathname === NETLIFY_HEALTH_PATH) return netlifyHealth();
+  const url = new URL(request.url);
+  if (url.pathname === NETLIFY_HEALTH_PATH) return netlifyHealth(undefined, url.hostname);
   return new Response(BROWSER_TRACKER_SOURCE, {
     headers: {
       "cache-control": "public, max-age=300",
