@@ -1,3 +1,4 @@
+// cspell:ignore KHTML
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { NETLIFY_EDGE_FUNCTIONS } from "./installer.js";
