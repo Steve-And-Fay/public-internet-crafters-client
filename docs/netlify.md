@@ -20,8 +20,12 @@ Configure these site-scoped runtime variables:
 IC_ANALYTICS_ENABLED=true
 IC_ANALYTICS_INGEST_URL=https://my.internetcrafters.com/ingest/v1/events
 IC_ANALYTICS_INGEST_TOKEN=replace-with-the-site-installation-token
-IC_ANALYTICS_RELEASE=customer-site-release-id
 ```
+
+Use a distinct portal installation token for each exact hostname. Limit these variables to the
+production context and enable their runtime scope; preview hosts remain disabled unless explicitly
+registered for collection. The installer itself does not need the collector token at build time.
+Omit `IC_ANALYTICS_RELEASE` to use `COMMIT_REF` or `DEPLOY_ID`, or provide your real release identifier.
 
 Optional controls:
 
@@ -37,9 +41,20 @@ named click, and a crawler request. The collector token must not appear in the s
 or HTML. Tracking `main` intentionally takes the latest reviewed client commit on every deploy; use
 a release tag instead when a customer needs a frozen version.
 
+After installation, run `ic-client doctor netlify --target ./netlify/edge-functions`. After deployment,
+add `--url https://customer.example.com` using the canonical hostname. See the
+[health-check guide](installation-health.md) for GitHub commands, exit codes, and limitations.
+
+The bootstrap always returns a readable HTML response, including pages already containing the
+tracker or fragments without a closing head tag. Pages without a closing head remain unchanged;
+they cannot receive automatic tracker injection.
+
 ## Check this document against
 
 - `src/index.ts`
 - `src/injection.ts`
 - `src/edge/entrypoints/`
 - `src/installer.ts`
+- `src/doctor.ts`
+- `src/edge/health.ts`
+- `tests/browser-bootstrap-response.test.ts`

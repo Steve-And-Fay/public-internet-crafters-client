@@ -41,7 +41,7 @@ Four bundled Edge Functions are installed into enabled customer sites from this 
 
 - `crawler-observer` runs only for Netlify's `crawler` and `ai-agent` categories.
 - `browser-bootstrap` adds the same-origin client script to browser HTML responses.
-- `browser-script` serves the generated, privacy-minimized browser tracker.
+- `browser-script` serves the generated tracker and a read-only configuration health endpoint.
 - `browser-events` validates browser events and forwards them without exposing collector secrets.
 
 The `ic-client` installer owns those files. A Netlify build can run the installer from GitHub's
@@ -85,7 +85,6 @@ Then set these site-scoped environment variables:
 IC_ANALYTICS_ENABLED=true
 IC_ANALYTICS_INGEST_URL=https://collector.example.com/v1/events
 IC_ANALYTICS_INGEST_TOKEN=replace-with-a-site-specific-secret
-IC_ANALYTICS_RELEASE=customer-site-release-id
 ```
 
 Optional variables:
@@ -99,6 +98,19 @@ Optional variables:
 
 Trigger a fresh deploy after changing configuration. Environment variables must be scoped to runtime
 so the Edge Functions can reach the collector.
+
+On Netlify, omit `IC_ANALYTICS_RELEASE` to use `COMMIT_REF` or `DEPLOY_ID` automatically. Set an
+explicit release only when your build supplies a real release identifier, not a fixed placeholder.
+Use production-scoped settings; keep preview collection disabled unless its hostname has its own
+portal installation. Each customer site needs its own token.
+
+Run the read-only [installation health check](docs/installation-health.md) after installing and
+deploying. It never submits events, creates errors, or sends emails:
+
+```sh
+npx --yes github:Steve-And-Fay/public-internet-crafters-client#main doctor netlify \
+  --target ./netlify/edge-functions --url https://customer.example.com
+```
 
 To name a high-value click, add `data-ic-track`:
 
@@ -132,7 +144,7 @@ pin a public GitHub tag or commit instead.
 AWS, WordPress, and custom Node projects can pin a public GitHub tag or commit:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.1"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.2.3"
 npx ic-client install wordpress --target ./wp-content/plugins
 npx ic-client install aws --target ./infrastructure
 ```
@@ -158,6 +170,8 @@ error capture](docs/error-capture.md) guides.
 ## Check this document against
 
 - `src/installer.ts`
+- `src/doctor.ts`
+- `src/edge/health.ts`
 - `src/edge/entrypoints/`
 - `src/contracts/analytics-event.ts`
 - `docs/event-contract.md`

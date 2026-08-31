@@ -1,7 +1,9 @@
 import { BROWSER_TRACKER_SOURCE } from "virtual:browser-tracker-source";
+import { NETLIFY_HEALTH_PATH, netlifyHealth } from "../health.js";
 import type { EdgeFunctionConfig } from "../runtime.js";
 
-export default function browserScript(): Response {
+export default function browserScript(request: Request): Response {
+  if (new URL(request.url).pathname === NETLIFY_HEALTH_PATH) return netlifyHealth();
   return new Response(BROWSER_TRACKER_SOURCE, {
     headers: {
       "cache-control": "public, max-age=300",
@@ -16,5 +18,5 @@ export const config: EdgeFunctionConfig = {
   header: { "netlify-agent-category": "^browser$" },
   method: "GET",
   onError: "fail",
-  path: "/__ic/analytics/v1/client.js",
+  path: ["/__ic/analytics/v1/client.js", NETLIFY_HEALTH_PATH],
 };

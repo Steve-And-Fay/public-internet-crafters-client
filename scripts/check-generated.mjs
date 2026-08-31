@@ -24,7 +24,28 @@ for (const file of files) {
   }
 }
 
-const browserSource = await readFile(new URL("browser-script.js", outputDirectory), "utf8");
-if (browserSource.includes("IC_ANALYTICS_INGEST_TOKEN")) {
-  throw new Error("The generated browser client contains the collector credential name");
+// Inspect the browser response, not server-side code serving the health endpoint.
+const { default: browserScript } = await import(new URL("browser-script.js", outputDirectory));
+const canary = "private-collector-canary";
+globalThis.Netlify = {
+  env: {
+    get: (name) =>
+      ({
+        IC_ANALYTICS_ENABLED: "true",
+        IC_ANALYTICS_INGEST_TOKEN: canary,
+        IC_ANALYTICS_INGEST_URL: "https://private-collector.example.com/events",
+      })[name],
+  },
+};
+for (const path of ["client.js", "health"]) {
+  const response = browserScript(new Request(`https://example.com/__ic/analytics/v1/${path}`));
+  const body = await response.text();
+  if (
+    body.includes("IC_ANALYTICS_INGEST_TOKEN") ||
+    body.includes(canary) ||
+    body.includes("private-collector.example.com")
+  ) {
+    throw new Error(`The generated ${path} response exposes collector configuration`);
+  }
 }
+delete globalThis.Netlify;
