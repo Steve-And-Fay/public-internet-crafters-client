@@ -23,7 +23,8 @@ IC_ANALYTICS_INGEST_TOKEN=replace-with-the-site-installation-token
 ```
 
 Use a distinct portal installation token for each exact hostname. Limit these variables to the
-production context and enable their runtime scope; preview hosts remain disabled unless explicitly
+production context and select the **Functions** scope (which includes Edge Functions at runtime);
+preview hosts remain disabled unless explicitly
 registered for collection. The installer itself does not need the collector token at build time.
 Omit `IC_ANALYTICS_RELEASE` to use `COMMIT_REF` or `DEPLOY_ID`, or provide your real release identifier.
 

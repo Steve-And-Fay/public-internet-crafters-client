@@ -39,7 +39,8 @@ The health endpoint shares the existing browser-script Edge Function, so there a
 installed functions. Its response is not cached and contains no token, collector URL, or visitor
 data. Incomplete configuration or fully disabled collection returns HTTP 503. A browser-only opt-out
 skips browser checks, while a crawler-only opt-out produces a warning. Netlify routes the endpoint
-for browser-classified requests; the doctor supplies a browser-style user agent.
+for browser-classified requests; the doctor supplies a complete browser user agent. A bare
+`Mozilla/5.0` prefix does not reliably match that routing and can produce a misleading 404.
 
 Use the canonical HTTPS origin without a path, query string, or credentials. Redirects fail
 explicitly rather than silently checking a different host. Authentication-protected preview sites

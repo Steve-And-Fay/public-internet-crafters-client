@@ -65,6 +65,9 @@ describe("Netlify installation doctor", () => {
       expect(options?.method).toBe("GET");
       expect(options?.body).toBeUndefined();
       expect(options?.redirect).toBe("error");
+      // Netlify does not classify a bare Mozilla prefix as a browser.
+      expect(new Headers(options?.headers).get("user-agent")).toContain("Chrome/");
+      expect(new Headers(options?.headers).get("user-agent")).toContain("Safari/");
     }
   });
 

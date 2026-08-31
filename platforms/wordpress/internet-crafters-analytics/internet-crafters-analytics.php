@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Internet Crafters Analytics
  * Description: Privacy-minimized traffic, crawler, campaign, click, and error telemetry for the Internet Crafters portal.
- * Version: 0.2.3
+ * Version: 0.2.4
  * Requires PHP: 7.4
  * Author: Internet Crafters
  * License: GPL-2.0-or-later
@@ -12,7 +12,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('IC_ANALYTICS_PLUGIN_VERSION', '0.2.3');
+define('IC_ANALYTICS_PLUGIN_VERSION', '0.2.4');
 define('IC_ANALYTICS_BROWSER_ROUTE', '/__ic/analytics/v1/events');
 
 function ic_analytics_setting($constant, $environment, $default = '')
