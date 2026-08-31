@@ -49,4 +49,22 @@ describe("Netlify HTML response delivery", () => {
     expect(await result.text()).toContain("Welcome");
     expect(result.headers.get("etag")).toBe("original");
   });
+
+  it("passes the live Netlify deploy ID to the browser without build environment variables", async () => {
+    const values: Record<string, string> = {
+      IC_ANALYTICS_ENABLED: "true",
+      IC_ANALYTICS_INGEST_URL: "https://collector.example.com/events",
+    };
+    vi.stubGlobal("Netlify", { env: { get: (name: string) => values[name] } });
+    const response = await browserBootstrap(new Request("https://example.com/"), {
+      deploy: { id: "edge-deploy-123" },
+      next: async () =>
+        new Response("<head></head><body>Welcome</body>", {
+          headers: { "content-type": "text/html" },
+        }),
+      waitUntil: vi.fn(),
+    });
+
+    expect(await response.text()).toContain('<meta name="ic-release" content="edge-deploy-123">');
+  });
 });

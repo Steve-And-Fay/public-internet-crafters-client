@@ -44,4 +44,18 @@ describe("Netlify runtime metadata", () => {
     expect(runtimeRelease(environment({ DEPLOY_ID: "deploy-789" }))).toBe("deploy-789");
     expect(runtimeRelease(environment({}))).toBe("unknown");
   });
+
+  it("uses the actual edge deploy when build environment variables are unavailable or stale", () => {
+    expect(runtimeRelease(environment({}), { id: "edge-deploy-123" })).toBe("edge-deploy-123");
+    expect(
+      runtimeRelease(environment({ COMMIT_REF: "old-commit", DEPLOY_ID: "old-deploy" }), {
+        id: "edge-deploy-123",
+      }),
+    ).toBe("edge-deploy-123");
+    expect(
+      runtimeRelease(environment({ IC_ANALYTICS_RELEASE: "explicit-release" }), {
+        id: "edge-deploy-123",
+      }),
+    ).toBe("explicit-release");
+  });
 });

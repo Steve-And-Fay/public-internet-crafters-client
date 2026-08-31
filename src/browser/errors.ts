@@ -44,15 +44,29 @@ function frameFromLine(line: string): AnalyticsErrorFrame | null {
   let module = rawModule;
   try {
     const url = new URL(rawModule, "https://analytics.invalid");
-    if (url.search || url.hash) return null;
+    // Deployed chunks commonly carry cache/deploy queries. Keep only the path,
+    // rather than dropping the code location along with the private URL parts.
     module = url.pathname;
   } catch {
     return null;
   }
   if (!module.startsWith("/") || module.includes("..") || module.length > 500) return null;
   const beforeLocation = line.slice(0, location.index).trim();
-  const functionMatch = beforeLocation.match(/(?:at\s+)?(?<function>[A-Za-z0-9_.$:-]+)\s*\(?$/u);
-  const functionName = functionMatch?.groups?.function;
+  // Chrome starts frames with "at"; Safari/Firefox use "function@URL" and
+  // can start the stack with a frame. Reject message text, even if it has a URL.
+  if (
+    beforeLocation &&
+    !/^at(?:\s|$)/u.test(beforeLocation) &&
+    !/^(?:[A-Za-z0-9_.$:-]*|global code)@$/u.test(beforeLocation)
+  ) {
+    return null;
+  }
+  // Keep the location even when aliases or other decorations make the
+  // function name unsuitable for the structural allowlist.
+  const functionMatch = beforeLocation.match(
+    /^(?:at\s+(?:async\s+)?(?<chrome>[A-Za-z0-9_.$:-]+)\s*\(?|(?<other>[A-Za-z0-9_.$:-]+)@)$/u,
+  );
+  const functionName = functionMatch?.groups?.chrome || functionMatch?.groups?.other;
 
   return {
     column: Number(location.groups.column),
@@ -67,7 +81,7 @@ export function structuralBrowserError(
   { mechanism, release, userAgent }: BrowserErrorOptions,
 ): AnalyticsError {
   const error = value instanceof Error ? value : null;
-  const frames = (error?.stack?.split("\n").slice(1) ?? [])
+  const frames = (error?.stack?.split("\n") ?? [])
     .map(frameFromLine)
     .filter((frame): frame is AnalyticsErrorFrame => frame !== null)
     .slice(0, 20);
