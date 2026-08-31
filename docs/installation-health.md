@@ -51,6 +51,10 @@ Use the canonical HTTPS origin without a path, query string, or credentials. Red
 explicitly rather than silently checking a different host. Authentication-protected preview sites
 must be verified through their authorized workflow; the doctor does not bypass access controls.
 
+For the optional `IC_ANALYTICS_INGEST_TOKENS_BY_HOST` configuration, run the doctor on each exact
+non-redirecting host. Readiness is host-specific: a malformed map or missing entry fails even if a
+legacy single token is present. Neither the map nor its credentials appear in the health response.
+
 ## What a pass does not prove
 
 `deliveryVerified` is always `false`. Configuration presence does not prove the installation token
@@ -69,3 +73,4 @@ The doctor currently supports Netlify only; AWS and WordPress still require plat
 - `src/edge/entrypoints/browser-script.ts`
 - `tests/doctor.test.ts`
 - `tests/netlify-health.test.ts`
+- `tests/netlify-host-credentials.test.ts`

@@ -19,7 +19,7 @@ export default async function crawlerObserver(
     return context.next();
   }
 
-  const destination = runtimeDestination();
+  const destination = runtimeDestination(undefined, new URL(request.url).hostname);
   const occurredAt = new Date();
   const response = await context.next();
 

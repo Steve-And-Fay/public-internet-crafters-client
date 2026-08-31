@@ -51,19 +51,52 @@ export function runtimeCollectionEnabled(
 
 export function runtimeDestination(
   env: NetlifyEnvironment | undefined = runtimeEnvironment(),
+  hostname?: string,
 ): AnalyticsDestination | null {
   const url = env?.get("IC_ANALYTICS_INGEST_URL");
   if (!url) {
     return null;
   }
 
-  const token = env?.get("IC_ANALYTICS_INGEST_TOKEN");
+  const token = runtimeToken(env, hostname);
+  if (token === null) return null;
   return createWebhookDestination({
     authHeader: env?.get("IC_ANALYTICS_INGEST_AUTH_HEADER") || "authorization",
     authScheme: env?.get("IC_ANALYTICS_INGEST_AUTH_SCHEME") ?? "Bearer",
     ...(token ? { token } : {}),
     url,
   });
+}
+
+// A configured map is authoritative. Unknown hosts must never borrow another
+// host's credential, including the legacy single-token fallback.
+export function runtimeToken(
+  env: NetlifyEnvironment | undefined = runtimeEnvironment(),
+  hostname?: string,
+): string | undefined | null {
+  const raw = env?.get("IC_ANALYTICS_INGEST_TOKENS_BY_HOST");
+  if (raw === undefined) return env?.get("IC_ANALYTICS_INGEST_TOKEN");
+  if (!hostname || raw.length > 32_768) return null;
+  try {
+    const tokens: unknown = JSON.parse(raw);
+    if (!tokens || typeof tokens !== "object" || Array.isArray(tokens)) return null;
+    const entries = Object.entries(tokens);
+    if (entries.length === 0 || entries.length > 20) return null;
+    const hostPattern =
+      /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u;
+    for (const [host, token] of entries) {
+      if (
+        !hostPattern.test(host) ||
+        typeof token !== "string" ||
+        token.length > 1_024 ||
+        !/^[!-~]+$/u.test(token)
+      )
+        return null;
+    }
+    return Object.hasOwn(tokens, hostname) ? (tokens as Record<string, string>)[hostname] : null;
+  } catch {
+    return null;
+  }
 }
 
 export function runtimeRelease(

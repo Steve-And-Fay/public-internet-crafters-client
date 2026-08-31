@@ -19,7 +19,7 @@ export default async function browserBootstrap(
   if (
     !runtimeCollectionEnabled("browser") ||
     !publicPathAllowed(new URL(request.url).pathname, runtimePublicPaths()) ||
-    !runtimeDestination() ||
+    !runtimeDestination(undefined, new URL(request.url).hostname) ||
     !response.ok ||
     !response.body
   ) {
