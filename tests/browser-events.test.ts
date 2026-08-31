@@ -2,6 +2,42 @@ import { describe, expect, it } from "vitest";
 import { normalizeBrowserEvent, sanitizeClickDestination } from "../src/edge/events/browser.js";
 
 describe("browser analytics events", () => {
+  it("strips visitor and campaign data from anonymous counts even if supplied by the browser", () => {
+    const event = normalizeBrowserEvent(
+      {
+        collection_mode: "anonymous",
+        event_type: "click",
+        event_id: "count-1",
+        path: "/pricing?gclid=secret",
+        session_id: "must-not-travel",
+        attribution: { source: "google" },
+        target: { kind: "link", name: "private-label", destination: "/contact" },
+      },
+      {
+        hostname: "example.com",
+        platform: "netlify",
+        receivedAt: new Date("2026-08-30T18:30:59Z"),
+      },
+    );
+    expect(event.properties).toEqual({ collection_mode: "anonymous" });
+    expect(event.attribution).toBeUndefined();
+    expect(event.request).toBeUndefined();
+    expect(event.page.path).toBe("/pricing");
+    expect(event.occurred_at).toBe("2026-08-30T18:30:00.000Z");
+  });
+
+  it("does not accept error details in anonymous mode", () => {
+    expect(() =>
+      normalizeBrowserEvent(
+        { collection_mode: "anonymous", event_type: "error" },
+        {
+          hostname: "example.com",
+          platform: "netlify",
+          receivedAt: new Date(),
+        },
+      ),
+    ).toThrow();
+  });
   it("normalizes page views without query strings or arbitrary browser fields", () => {
     const event = normalizeBrowserEvent(
       {

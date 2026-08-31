@@ -186,6 +186,12 @@ function ic_analytics_normalize_browser_event($input)
     }
 
     $type = $input['event_type'];
+    $anonymous = (isset($input['collection_mode']) && $input['collection_mode'] === 'anonymous')
+        || (isset($_SERVER['HTTP_DNT']) && $_SERVER['HTTP_DNT'] === '1')
+        || (isset($_SERVER['HTTP_SEC_GPC']) && $_SERVER['HTTP_SEC_GPC'] === '1');
+    if ($anonymous && $type === 'error') {
+        return null;
+    }
     $event = array(
         'schema_version' => 1,
         'event_id' => ic_analytics_identifier(isset($input['event_id']) ? $input['event_id'] : null, wp_generate_uuid4()),
@@ -196,7 +202,10 @@ function ic_analytics_normalize_browser_event($input)
         'page' => array('path' => ic_analytics_path(isset($input['path']) ? $input['path'] : '/')),
     );
 
-    if ($type !== 'error') {
+    if ($anonymous) {
+        $event['properties'] = array('collection_mode' => 'anonymous');
+        $event['occurred_at'] = gmdate('Y-m-d\TH:i:00\Z', strtotime($event['occurred_at']));
+    } elseif ($type !== 'error') {
         $properties = array(
             'session_id' => ic_analytics_identifier(isset($input['session_id']) ? $input['session_id'] : null, wp_generate_uuid4()),
         );
