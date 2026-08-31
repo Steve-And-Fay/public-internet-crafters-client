@@ -38,3 +38,5 @@ TESTREQUEST
 tsconfig
 unslash
 Vitest
+openstreetmap
+daddr

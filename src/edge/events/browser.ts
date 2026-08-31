@@ -1,9 +1,15 @@
 import {
+  actionForEvent,
+  safeActionType,
+  sanitizeClickDestination,
+} from "../../contracts/actions.js";
+import {
   ANALYTICS_SCHEMA_VERSION,
   type AnalyticsAttribution,
   type AnalyticsError,
   type AnalyticsErrorFrame,
   type AnalyticsEventEnvelope,
+  type AnalyticsEventType,
   type AnalyticsPlatform,
   normalizePagePath,
   safeCampaignLabel,
@@ -11,6 +17,8 @@ import {
   safeLabel,
   safeTimestamp,
 } from "../../contracts/analytics-event.js";
+
+export { sanitizeClickDestination } from "../../contracts/actions.js";
 
 interface BrowserEventContext {
   anonymous?: boolean;
@@ -110,49 +118,27 @@ function normalizeError(value: unknown): AnalyticsError {
   };
 }
 
-export function sanitizeClickDestination(value: unknown, siteHostname: string): string | null {
-  if (typeof value !== "string" || value.length === 0 || value.length > 4_096) {
-    return null;
-  }
-
-  try {
-    const destination = new URL(value, `https://${siteHostname}`);
-    if (destination.protocol === "tel:" || destination.protocol === "mailto:") {
-      return destination.protocol;
-    }
-
-    if (destination.protocol !== "http:" && destination.protocol !== "https:") {
-      return null;
-    }
-
-    if (destination.hostname === siteHostname) {
-      return normalizePagePath(destination.pathname);
-    }
-
-    return destination.origin;
-  } catch {
-    return null;
-  }
-}
-
 export function normalizeBrowserEvent(
   input: BrowserEventInput,
   context: BrowserEventContext,
 ): AnalyticsEventEnvelope {
-  if (!["page_view", "click", "error"].includes(String(input.event_type))) {
+  const dedicatedAction = actionForEvent(input.event_type);
+  if (!dedicatedAction && !["page_view", "click", "error"].includes(String(input.event_type))) {
     throw new TypeError("Unsupported browser analytics event type");
   }
 
-  const eventType = input.event_type as "click" | "error" | "page_view";
+  let eventType = input.event_type as AnalyticsEventType;
   const anonymous = context.anonymous === true || input.collection_mode === "anonymous";
   if (anonymous && eventType === "error") throw new TypeError("Anonymous mode only accepts counts");
+  if (anonymous && dedicatedAction) eventType = "click";
   const properties: Record<string, string> = {};
   if (anonymous) properties.collection_mode = "anonymous";
   if (!anonymous && eventType !== "error") {
     properties.session_id = safeIdentifier(input.session_id, crypto.randomUUID());
   }
 
-  if (!anonymous && eventType === "click") {
+  if (!anonymous && (eventType === "click" || dedicatedAction)) {
+    const action = dedicatedAction ?? safeActionType(input.target?.action);
     const kind = safeLabel(input.target?.kind);
     const name = safeLabel(input.target?.name);
     const destination = sanitizeClickDestination(input.target?.destination, context.hostname);
@@ -160,6 +146,7 @@ export function normalizeBrowserEvent(
     if (destination) properties.target_destination = destination;
     if (kind) properties.target_kind = kind;
     if (name) properties.target_name = name;
+    if (action) properties.action_type = action;
   }
 
   const platformSiteId = safeLabel(context.platformSiteId);
