@@ -14,13 +14,17 @@ beforeAll(async () => {
   source = result.outputFiles[0]?.text ?? "";
 });
 
-function runTracker(privacy: { doNotTrack?: string; globalPrivacyControl?: boolean }) {
+function runTracker(
+  privacy: { doNotTrack?: string; globalPrivacyControl?: boolean },
+  publicPaths?: string,
+  initialPath = "/pricing",
+) {
   const listeners: Record<string, (event?: unknown) => void> = {};
   const fetch = vi.fn().mockResolvedValue({ ok: true });
   const sendBeacon = vi.fn().mockReturnValue(true);
   const storage = { getItem: vi.fn(), setItem: vi.fn() };
   const location = {
-    pathname: "/pricing",
+    pathname: initialPath,
     href: "https://example.com/pricing?utm_source=google&gclid=secret",
   };
   const history = { pushState: vi.fn(), replaceState: vi.fn() };
@@ -39,7 +43,10 @@ function runTracker(privacy: { doNotTrack?: string; globalPrivacyControl?: boole
     fetch,
     queueMicrotask: (fn: () => void) => fn(),
     document: {
-      querySelector: () => null,
+      querySelector: (selector: string) =>
+        selector === 'meta[name="ic-public-paths"]' && publicPaths !== undefined
+          ? { content: publicPaths }
+          : null,
       addEventListener: (name: string, fn: () => void) => {
         listeners[name] = fn;
       },
@@ -88,5 +95,30 @@ describe("privacy-signal counting", () => {
     expect(runtime.storage.setItem).toHaveBeenCalled();
     expect(runtime.sendBeacon).toHaveBeenCalledOnce();
     expect(runtime.listeners.error).toBeTypeOf("function");
+  });
+
+  it.each([{}, { doNotTrack: "1" }, { globalPrivacyControl: true }])(
+    "stops all collection while SPA navigation enters a private page: %j",
+    (privacy) => {
+      const runtime = runTracker(privacy, '["/pricing","/about"]');
+      const total = () => runtime.fetch.mock.calls.length + runtime.sendBeacon.mock.calls.length;
+      expect(total()).toBe(1);
+      runtime.location.pathname = "/r/private-room";
+      runtime.history.pushState();
+      runtime.listeners.error?.({ error: new Error("private") });
+      runtime.listeners.unhandledrejection?.({ reason: new Error("private") });
+      expect(total()).toBe(1);
+      runtime.location.pathname = "/about";
+      runtime.history.replaceState();
+      expect(total()).toBe(2);
+    },
+  );
+
+  it("does not touch storage or send events if loaded directly on a private page", () => {
+    const runtime = runTracker({}, '["/pricing"]', "/r/private-room");
+    expect(runtime.storage.getItem).not.toHaveBeenCalled();
+    expect(runtime.storage.setItem).not.toHaveBeenCalled();
+    expect(runtime.fetch).not.toHaveBeenCalled();
+    expect(runtime.sendBeacon).not.toHaveBeenCalled();
   });
 });

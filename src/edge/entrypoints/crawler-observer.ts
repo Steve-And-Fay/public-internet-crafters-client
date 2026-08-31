@@ -1,16 +1,21 @@
+import { publicPathAllowed } from "../../contracts/public-paths.js";
 import { createCrawlerPageView } from "../events/crawler.js";
 import {
   type EdgeFunctionConfig,
   type NetlifyEdgeContext,
   runtimeCollectionEnabled,
   runtimeDestination,
+  runtimePublicPaths,
 } from "../runtime.js";
 
 export default async function crawlerObserver(
   request: Request,
   context: NetlifyEdgeContext,
 ): Promise<Response> {
-  if (!runtimeCollectionEnabled("crawler")) {
+  if (
+    !runtimeCollectionEnabled("crawler") ||
+    !publicPathAllowed(new URL(request.url).pathname, runtimePublicPaths())
+  ) {
     return context.next();
   }
 

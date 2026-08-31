@@ -98,6 +98,19 @@ export async function checkNetlifyInstallation({
   try {
     const response = await get("/__ic/analytics/v1/health");
     const health = (await response.json()) as Record<string, unknown>;
+    if (health.publicPathsValid === false) {
+      add(
+        "public-pages",
+        "fail",
+        "The public-page allowlist is invalid; collection fails closed. Check IC_ANALYTICS_PUBLIC_PATHS and redeploy.",
+      );
+    } else if (health.publicPathsRestricted === true) {
+      add(
+        "public-pages",
+        "pass",
+        "Collection is restricted to configured public paths; verify excluded pages separately.",
+      );
+    }
     const configured =
       response.ok &&
       health.status === "ready" &&

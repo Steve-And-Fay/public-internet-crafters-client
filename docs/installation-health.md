@@ -31,7 +31,8 @@ tag or commit instead of `main`; a newer doctor correctly reports version drift 
 
 The deployed check verifies:
 
-- `GET /__ic/analytics/v1/health`: enabled channels, collector configuration presence, client version
+- `GET /__ic/analytics/v1/health`: enabled channels, collector configuration presence, public-page
+  policy validity, client version
 - `/`: the HTML response references the injected same-origin tracker
 - `/__ic/analytics/v1/client.js`: a nonempty JavaScript response is served
 
@@ -41,6 +42,10 @@ data. Incomplete configuration or fully disabled collection returns HTTP 503. A 
 skips browser checks, while a crawler-only opt-out produces a warning. Netlify routes the endpoint
 for browser-classified requests; the doctor supplies a complete browser user agent. A bare
 `Mozilla/5.0` prefix does not reliably match that routing and can produce a misleading 404.
+
+An invalid `IC_ANALYTICS_PUBLIC_PATHS` also returns HTTP 503 and blocks collection. Health exposes
+only whether the policy is valid/restricted, never its contents. The HTML check assumes `/` is
+allowed; inspect another public page manually if your policy intentionally excludes the homepage.
 
 Use the canonical HTTPS origin without a path, query string, or credentials. Redirects fail
 explicitly rather than silently checking a different host. Authentication-protected preview sites

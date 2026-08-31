@@ -94,6 +94,7 @@ Optional variables:
 | --- | --- | --- |
 | `IC_ANALYTICS_CRAWLERS` | `true` | Disable only crawler and AI-agent observation with `false`. |
 | `IC_ANALYTICS_BROWSER` | `true` | Disable browser page views and clicks with `false`. |
+| `IC_ANALYTICS_PUBLIC_PATHS` | unset (all eligible pages) | JSON public-page allowlist; required for sites with private room or admin URLs. Invalid values block collection. |
 | `IC_ANALYTICS_INGEST_AUTH_HEADER` | `authorization` | Collector credential header. |
 | `IC_ANALYTICS_INGEST_AUTH_SCHEME` | `Bearer` | Prefix before the token; set to an empty value for raw API keys. |
 
@@ -121,6 +122,10 @@ To name a high-value click, add `data-ic-track`:
 
 The resulting event keeps `pricing-contact` and `/contact`, but not the link text or query string.
 Use `data-ic-track-ignore` on an element or ancestor to suppress click collection.
+
+Before enabling a site with private routes, configure [public-page filtering](docs/public-pages.md).
+The Netlify adapter enforces it in HTML injection, SPA navigation, browser event forwarding, and
+crawler observation. Private room identifiers must not become analytics page paths.
 
 Version 0.3.0 registers dedicated call, email, directions, download, outbound, submit-button,
 form-attempt and confirmed-form events. See [contact actions](docs/contact-actions.md) for the
@@ -150,7 +155,7 @@ pin a public GitHub tag or commit instead.
 AWS, WordPress, and custom Node projects can pin a public GitHub tag or commit:
 
 ```sh
-npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.3.0"
+npm install --save-dev "github:Steve-And-Fay/public-internet-crafters-client#v0.3.1"
 npx ic-client install wordpress --target ./wp-content/plugins
 npx ic-client install aws --target ./infrastructure
 ```
@@ -180,4 +185,5 @@ error capture](docs/error-capture.md) guides.
 - `src/edge/health.ts`
 - `src/edge/entrypoints/`
 - `src/contracts/analytics-event.ts`
+- `src/contracts/public-paths.ts`
 - `docs/event-contract.md`

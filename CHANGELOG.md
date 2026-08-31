@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.1
+
+- Add opt-in Netlify public-page filtering before private-room and admin-route installations.
+- Enforce the policy in browser navigation/actions/errors, the browser collector, and crawler
+  observation; invalid configuration fails closed and appears in installation health checks.
+- Keep unrestricted existing installations and portable event contracts unchanged.
+
+## 0.3.0
+
+- Register dedicated call, email, directions, download, outbound, form-button, form-attempt, and
+  confirmed-form events without duplicating generic click counts.
+- Add explicit native-form and vendor confirmation hooks with in-memory deduplication.
+- Preserve reduced-data anonymous counts and WordPress action-event parity.
+
 ## 0.2.4
 
 - Use a complete browser user agent for Netlify's browser-classified health routes.
@@ -22,4 +36,6 @@
 - `package.json`
 - `src/edge/entrypoints/browser-bootstrap.ts`
 - `src/doctor.ts`
+- `src/contracts/public-paths.ts`
+- `docs/public-pages.md`
 - `docs/privacy.md`

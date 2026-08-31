@@ -3,6 +3,7 @@ import {
   type NetlifyEnvironment,
   runtimeCollectionEnabled,
   runtimeEnvironment,
+  runtimePublicPaths,
 } from "./runtime.js";
 
 export const NETLIFY_HEALTH_PATH = "/__ic/analytics/v1/health";
@@ -12,6 +13,7 @@ export function netlifyHealth(
 ): Response {
   const browserEnabled = runtimeCollectionEnabled("browser", env);
   const crawlersEnabled = runtimeCollectionEnabled("crawler", env);
+  const policy = runtimePublicPaths(env);
   let collectorConfigured = false;
   try {
     const url = new URL(env?.get("IC_ANALYTICS_INGEST_URL") ?? "");
@@ -26,7 +28,7 @@ export function netlifyHealth(
   const status =
     !browserEnabled && !crawlersEnabled
       ? "disabled"
-      : collectorConfigured
+      : collectorConfigured && policy.mode !== "invalid"
         ? "ready"
         : "misconfigured";
   return Response.json(
@@ -36,6 +38,8 @@ export function netlifyHealth(
       browserEnabled,
       crawlersEnabled,
       collectorConfigured,
+      publicPathsValid: policy.mode !== "invalid",
+      publicPathsRestricted: policy.mode !== "all",
       // This endpoint deliberately never submits an event or tests credentials.
       deliveryVerified: false,
     },

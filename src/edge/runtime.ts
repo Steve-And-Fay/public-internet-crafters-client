@@ -1,3 +1,4 @@
+import { parsePublicPaths } from "../contracts/public-paths.js";
 import type { AnalyticsDestination } from "./destinations/types.js";
 import { createWebhookDestination } from "./destinations/webhook.js";
 
@@ -68,6 +69,10 @@ export function runtimeRelease(env: NetlifyEnvironment | undefined = runtimeEnvi
   return (
     env?.get("IC_ANALYTICS_RELEASE") || env?.get("COMMIT_REF") || env?.get("DEPLOY_ID") || "unknown"
   );
+}
+
+export function runtimePublicPaths(env: NetlifyEnvironment | undefined = runtimeEnvironment()) {
+  return parsePublicPaths(env?.get("IC_ANALYTICS_PUBLIC_PATHS"));
 }
 
 export function analyticsResponse(status: number, message?: string): Response {
